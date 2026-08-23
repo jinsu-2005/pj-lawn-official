@@ -13,7 +13,7 @@ export function useAdminGuard() {
       if (currentUser) {
         setUser(currentUser);
         // Force token refresh to get latest custom claims if changed recently
-        const tokenResult = await currentUser.getIdTokenResult();
+        const tokenResult = await currentUser.getIdTokenResult(true);
         if (tokenResult.claims.admin) {
           setIsAdmin(true);
         } else {
