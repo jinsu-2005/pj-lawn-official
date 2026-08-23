@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 4%; /* charcoal-900 */
+    --foreground: 41 43% 94%; /* cream-200 */
+    --card: 0 0% 7%; /* charcoal-800 */
+    --card-foreground: 41 43% 94%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 41 43% 94%;
+    --primary: 44 57% 54%; /* gold-500 */
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 10%; /* charcoal-700 */
+    --secondary-foreground: 41 43% 94%;
+    --muted: 0 0% 14%; /* charcoal-600 */
+    --muted-foreground: 41 18% 78%; /* cream-400 */
+    --accent: 44 57% 54%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 41 43% 94%;
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 44 57% 54%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-white/10;
+  }
+  body {
+    @apply bg-charcoal-900 text-cream-200 font-sans antialiased overflow-x-hidden selection:bg-gold-500/30;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .image-scrim {
+    background: linear-gradient(to bottom, rgba(17, 17, 17, 0.7) 0%, rgba(17, 17, 17, 0.2) 50%, rgba(17, 17, 17, 0.8) 100%);
+  }
+}

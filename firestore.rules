@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Function to check if the user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Function to check if the user is an admin
+    function isAdmin() {
+      return isAuth() && request.auth.token.admin == true;
+    }
+    
+    // Function to check if the user is accessing their own document
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    match /bookings/{bookingId} {
+      // Users can read their own bookings, admins can read all
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      
+      // Users can create bookings as pending_review
+      allow create: if isAuth() 
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.bookingStatus == "pending_review";
+        
+      // Only admins can update bookings (to approve/reject and set amounts)
+      allow update: if isAdmin();
+      
+      // No one can delete bookings
+      allow delete: if false;
+    }
+    
+    match /availability/{dateId} {
+      // Anyone can read date availability
+      allow read: if true;
+      
+      // Authenticated users can hold dates or admins can manage
+      allow write: if isAuth();
+    }
+    
+    match /settings/{settingId} {
+      // Anyone can read settings (pricing tiers, venue hours)
+      allow read: if true;
+      // Only admins can modify settings
+      allow write: if isAdmin();
+    }
+  }
+}
