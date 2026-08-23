@@ -1,17 +1,18 @@
 import { Handler } from '@netlify/functions';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { Cashfree, CFEnvironment } from 'cashfree-pg';
 
 let initialized = false;
 
 function initFirebase() {
-  if (!initialized && !admin.apps.length) {
+  if (!initialized && getApps().length === 0) {
     const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (serviceAccountStr) {
       try {
         const serviceAccount = JSON.parse(Buffer.from(serviceAccountStr, 'base64').toString('utf8'));
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount)
+        initializeApp({
+          credential: cert(serviceAccount)
         });
         initialized = true;
       } catch (e) {
@@ -47,12 +48,12 @@ export const handler: Handler = async (event, context) => {
     
     if (status === 'PAID') {
       // Payment successful, fulfill order
-      if (admin.apps.length) {
-        const db = admin.firestore();
+      if (getApps().length > 0) {
+        const db = getFirestore();
         await db.collection('bookings').doc(bookingId).update({
           paymentStatus: 'paid',
           bookingStatus: 'confirmed',
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          updatedAt: FieldValue.serverTimestamp()
         });
         
         // Let's also ensure availability is updated to confirmed just in case

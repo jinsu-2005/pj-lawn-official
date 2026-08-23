@@ -1,17 +1,18 @@
 import { Handler } from '@netlify/functions';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import { Cashfree, CFEnvironment } from 'cashfree-pg';
 
 let initialized = false;
 
 function initFirebase() {
-  if (!initialized && !admin.apps.length) {
+  if (!initialized && getApps().length === 0) {
     const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (serviceAccountStr) {
       try {
         const serviceAccount = JSON.parse(Buffer.from(serviceAccountStr, 'base64').toString('utf8'));
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount)
+        initializeApp({
+          credential: cert(serviceAccount)
         });
         initialized = true;
       } catch (e) {
@@ -28,7 +29,7 @@ export const handler: Handler = async (event, context) => {
 
   try {
     initFirebase();
-    if (!admin.apps.length) {
+    if (getApps().length === 0) {
       // Allow fallback for local dev if admin isn't configured, but ideally throw error
       console.warn("Firebase Admin not configured, skipping auth check");
     }
@@ -45,8 +46,8 @@ export const handler: Handler = async (event, context) => {
     let customerName = "Guest";
 
     // Fetch booking details from Firestore if Admin is initialized
-    if (admin.apps.length) {
-      const db = admin.firestore();
+    if (getApps().length > 0) {
+      const db = getFirestore();
       const bookingSnap = await db.collection('bookings').doc(bookingId).get();
       if (!bookingSnap.exists) {
         return { statusCode: 404, body: JSON.stringify({ error: 'Booking not found' }) };
@@ -94,8 +95,8 @@ export const handler: Handler = async (event, context) => {
     const response = await cashfree.PGCreateOrder(request);
     
     // Save the active order_id to the booking for reference
-    if (admin.apps.length) {
-      await admin.firestore().collection('bookings').doc(bookingId).update({
+    if (getApps().length > 0) {
+      await getFirestore().collection('bookings').doc(bookingId).update({
         cashfreeOrderId: orderId
       });
     }

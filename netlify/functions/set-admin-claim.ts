@@ -1,11 +1,12 @@
 import { Handler } from '@netlify/functions';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 // Initialize Firebase Admin (lazy load to avoid issues on cold starts)
 let initialized = false;
 
 function initFirebase() {
-  if (!initialized && !admin.apps.length) {
+  if (!initialized && getApps().length === 0) {
     // In production, use environment variables. 
     // Here we need FIREBASE_SERVICE_ACCOUNT base64 encoded or individual vars
     const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -13,8 +14,8 @@ function initFirebase() {
     if (serviceAccountStr) {
       try {
         const serviceAccount = JSON.parse(Buffer.from(serviceAccountStr, 'base64').toString('utf8'));
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount)
+        initializeApp({
+          credential: cert(serviceAccount)
         });
         initialized = true;
       } catch (e) {
@@ -31,7 +32,7 @@ export const handler: Handler = async (event, context) => {
 
   initFirebase();
 
-  if (!admin.apps.length) {
+  if (getApps().length === 0) {
     return { statusCode: 500, body: 'Firebase Admin not configured' };
   }
 
@@ -48,10 +49,10 @@ export const handler: Handler = async (event, context) => {
       return { statusCode: 401, body: 'Unauthorized' };
     }
 
-    const userRecord = await admin.auth().getUserByEmail(email);
+    const userRecord = await getAuth().getUserByEmail(email);
     
     // Set custom claim
-    await admin.auth().setCustomUserClaims(userRecord.uid, { admin: true });
+    await getAuth().setCustomUserClaims(userRecord.uid, { admin: true });
     
     return {
       statusCode: 200,
