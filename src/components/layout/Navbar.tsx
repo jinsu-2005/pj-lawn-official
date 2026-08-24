@@ -67,14 +67,23 @@ export default function Navbar() {
     <header
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        isScrolled ? 'bg-charcoal-900/95 backdrop-blur-md border-b border-white/5 py-4' : 'bg-transparent py-6'
+        isScrolled
+          ? 'bg-charcoal-900/95 md:bg-charcoal-900/80 backdrop-blur-md border-b border-white/5 py-3 md:py-2.5'
+          : 'bg-transparent md:bg-charcoal-900/80 md:backdrop-blur-md md:border-b md:border-white/5 py-5 md:py-3'
       )}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="text-2xl font-serif font-bold text-gold-400 tracking-wide">
-            PJ LAWN
+          <Link to="/" className="flex items-center gap-3 select-none group">
+            <img 
+              src="/logo.jpg" 
+              alt="PJ Lawn Logo" 
+              className="w-10 h-10 md:w-11 h-11 object-cover rounded-full border border-gold-500/30 shadow-md transition-transform duration-500 group-hover:rotate-[360deg] group-hover:scale-105" 
+            />
+            <span className="text-2xl md:text-3xl font-serif font-black tracking-[0.2em] bg-gold-gradient bg-clip-text text-transparent drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] group-hover:brightness-110 transition-all duration-300 uppercase">
+              PJ Lawn
+            </span>
           </Link>
 
           {/* Desktop Nav */}

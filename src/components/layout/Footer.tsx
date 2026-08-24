@@ -12,9 +12,16 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 mb-12">
           {/* Brand & Intro */}
           <div>
-            <h3 className="text-2xl font-serif font-bold text-gold-400 mb-4 tracking-wide">
-              PJ LAWN
-            </h3>
+            <div className="flex items-center gap-3 mb-4 select-none">
+              <img 
+                src="/logo.jpg" 
+                alt="PJ Lawn Logo" 
+                className="w-10 h-10 md:w-11 h-11 object-cover rounded-full border border-gold-500/30 shadow-md" 
+              />
+              <h3 className="text-2xl md:text-3xl font-serif font-black tracking-[0.2em] bg-gold-gradient bg-clip-text text-transparent drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] uppercase">
+                PJ Lawn
+              </h3>
+            </div>
             <p className="text-cream-400 text-sm leading-relaxed max-w-xs">
               An elegant open-air outdoor event venue in Nagercoil. Perfect for weddings, birthdays, anniversaries, and family gatherings under the open sky.
             </p>

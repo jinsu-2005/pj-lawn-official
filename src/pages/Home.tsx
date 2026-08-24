@@ -52,7 +52,7 @@ export default function Home() {
             initial={{ opacity: 0, letterSpacing: "0em" }}
             animate={{ opacity: 1, letterSpacing: "0.2em" }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="text-gold-400 uppercase text-sm font-medium mb-6"
+            className="text-gold-400 uppercase text-sm font-semibold mb-6 tracking-[0.2em] text-shadow-subtle drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
           >
             Nagercoil's Premier Open-Air Venue
           </motion.p>
@@ -60,7 +60,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-display-md md:text-display-lg lg:text-display-xl text-cream-50 font-serif max-w-4xl mx-auto leading-tight mb-8"
+            className="text-display-md md:text-display-lg lg:text-display-xl text-cream-50 font-serif max-w-4xl mx-auto leading-tight mb-8 text-shadow-hero drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]"
           >
             Celebrate Under the <br className="hidden md:block"/> Open Sky
           </motion.h1>
@@ -133,19 +133,19 @@ export default function Home() {
           initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
           className="relative z-10 text-center px-4 max-w-2xl mx-auto"
         >
-          <h2 className="text-display-sm md:text-display-md font-serif text-white mb-4">Exquisite Dining Arrangements</h2>
-          <p className="text-cream-200 text-lg">Perfectly suited for evening buffet events and grand dinner functions under the stars.</p>
+          <h2 className="text-display-sm md:text-display-md font-serif text-white mb-4 text-shadow-hero drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)]">Exquisite Dining Arrangements</h2>
+          <p className="text-cream-100 text-lg font-medium text-shadow-subtle drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">Perfectly suited for evening buffet events and grand dinner functions under the stars.</p>
         </motion.div>
       </section>
 
       {/* 5. Pricing Teaser */}
-      <section className="py-24 bg-charcoal-800 text-center px-4">
+      <section className="py-24 bg-charcoal-800/60 backdrop-blur-sm border-y border-white/5 text-center px-4">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} className="max-w-3xl mx-auto">
           <h2 className="text-display-sm font-serif text-cream-100 mb-4">Your Celebration, Your Way</h2>
           <p className="text-cream-400 mb-10 text-lg leading-relaxed">
             Whether you're planning a cozy get-together of 50 guests or a grand reception of 300, our flexible space adapts to your needs.
           </p>
-          <div className="inline-block border border-gold-500/30 p-8 rounded-md bg-charcoal-900">
+          <div className="inline-block border border-gold-500/30 p-8 rounded-md bg-charcoal-900/80 backdrop-blur-md shadow-xl shadow-black/40">
             <p className="text-sm uppercase tracking-widest text-gold-400 mb-2">Venue Packages Starting From</p>
             <p className="text-display-md font-serif text-cream-50 mb-6">
               {startingPrice ? `₹${startingPrice.toLocaleString()}` : '...'}

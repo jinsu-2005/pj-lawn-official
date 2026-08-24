@@ -22,10 +22,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyles = 'inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:pointer-events-none disabled:opacity-50 uppercase tracking-wider rounded-md'
     
     const variants = {
-      primary: 'bg-gold-500 text-charcoal-900 hover:bg-gold-400',
-      secondary: 'bg-charcoal-800 text-cream-200 hover:bg-charcoal-700',
-      outline: 'border border-gold-500 text-gold-400 hover:bg-gold-500/10',
-      ghost: 'hover:bg-white/5 hover:text-cream-200 text-cream-400',
+      primary: 'bg-gold-500 text-charcoal-950 font-bold hover:bg-gold-400 shadow-xl shadow-black/60 hover:shadow-gold-500/25 border border-gold-400/50 transition-all duration-300',
+      secondary: 'bg-charcoal-900/90 text-cream-100 backdrop-blur-md border border-white/15 hover:bg-charcoal-800 shadow-lg shadow-black/50 transition-all duration-300',
+      outline: 'border-2 border-gold-400 bg-charcoal-950/80 text-gold-300 backdrop-blur-md hover:bg-gold-500/25 hover:text-gold-100 hover:border-gold-300 shadow-xl shadow-black/70 font-semibold transition-all duration-300 [text-shadow:_0_1px_4px_rgba(0,0,0,0.9)]',
+      ghost: 'hover:bg-white/10 hover:text-cream-100 text-cream-300 font-medium transition-colors',
     }
     
     const sizes = {

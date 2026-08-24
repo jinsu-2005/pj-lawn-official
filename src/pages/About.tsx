@@ -86,7 +86,7 @@ export default function About() {
           />
           <div className="image-scrim" />
           <div className="absolute inset-0 flex items-center justify-center p-4">
-            <h2 className="text-display-md md:text-display-lg font-serif text-white text-center max-w-4xl drop-shadow-lg">
+            <h2 className="text-display-md md:text-display-lg font-serif text-white text-center max-w-4xl text-shadow-hero drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)]">
               Creating Memories with Family and Friends
             </h2>
           </div>
