@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export function useAdminGuard() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -12,13 +13,19 @@ export function useAdminGuard() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        // Force token refresh to get latest custom claims if changed recently
-        const tokenResult = await currentUser.getIdTokenResult(true);
-        if (tokenResult.claims.admin) {
-          setIsAdmin(true);
-        } else {
+        try {
+          const docRef = doc(db, 'admins', currentUser.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+            navigate('/dashboard'); // Redirect non-admins
+          }
+        } catch (e) {
+          console.error("Error checking admin status:", e);
           setIsAdmin(false);
-          navigate('/dashboard'); // Redirect non-admins
+          navigate('/dashboard');
         }
       } else {
         setUser(null);

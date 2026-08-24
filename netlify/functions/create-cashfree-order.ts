@@ -34,12 +34,12 @@ export const handler: Handler = async (event, context) => {
       console.warn("Firebase Admin not configured, skipping auth check");
     }
 
-    const { bookingId } = JSON.parse(event.body || '{}');
+    const { bookingId, paymentType = 'advance' } = JSON.parse(event.body || '{}');
     if (!bookingId) {
       return { statusCode: 400, body: JSON.stringify({ error: 'bookingId required' }) };
     }
 
-    let advanceAmount = 5000;
+    let orderAmount = 5000;
     let customerPhone = "9999999999";
     let customerId = "guest";
     let customerEmail = "guest@example.com";
@@ -54,16 +54,30 @@ export const handler: Handler = async (event, context) => {
       }
       
       const bookingData = bookingSnap.data()!;
-      if (bookingData.bookingStatus !== 'awaiting_payment') {
-        return { statusCode: 400, body: JSON.stringify({ error: 'Booking is not awaiting payment' }) };
+      const isPayable = bookingData.bookingStatus === 'awaiting_payment' || 
+                        (bookingData.bookingStatus === 'confirmed' && bookingData.paymentStatus === 'advance_paid');
+      
+      if (!isPayable) {
+        return { statusCode: 400, body: JSON.stringify({ error: 'Booking is not in a payable state' }) };
       }
       
-      advanceAmount = bookingData.advanceAmount || 5000;
+      if (paymentType === 'full') {
+        orderAmount = bookingData.totalAmount || bookingData.estimatedAmount || 5000;
+      } else if (paymentType === 'remaining') {
+        const alreadyPaid = bookingData.amountPaid || bookingData.advanceAmount || 5000;
+        orderAmount = (bookingData.totalAmount || bookingData.estimatedAmount || 5000) - alreadyPaid;
+      } else {
+        // default to 'advance'
+        orderAmount = bookingData.advanceAmount || 5000;
+      }
+
+      if (orderAmount <= 0) {
+        return { statusCode: 400, body: JSON.stringify({ error: 'Order amount must be greater than zero' }) };
+      }
+
       customerPhone = bookingData.phone || "9999999999";
       customerId = bookingData.userId || "guest";
       customerName = bookingData.name || "Guest";
-      
-      // We don't collect email on the form right now, so generate a dummy one for Cashfree
       customerEmail = `${customerId}@pjlawn.local`; 
     }
 
@@ -74,11 +88,11 @@ export const handler: Handler = async (event, context) => {
     // Pin to published v5 API version
     cashfree.XApiVersion = "2025-01-01";
 
-    const orderId = `order_${bookingId}_${Date.now()}`;
+    const orderId = `order_${bookingId}_${paymentType}_${Date.now()}`;
     const returnUrl = `${process.env.URL || 'http://localhost:5173'}/dashboard`;
 
     const request = {
-      order_amount: advanceAmount,
+      order_amount: orderAmount,
       order_currency: "INR",
       order_id: orderId,
       customer_details: {

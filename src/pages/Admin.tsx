@@ -12,6 +12,7 @@ export default function Admin() {
   const { isAdmin, loading, user } = useAdminGuard()
   const [activeTab, setActiveTab] = useState<'queue' | 'calendar' | 'pricing'>('queue')
   const [bookings, setBookings] = useState<any[]>([])
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
   
   // Real-time listener for all bookings
   useEffect(() => {
@@ -27,6 +28,13 @@ export default function Admin() {
     return () => unsubscribe()
   }, [isAdmin])
 
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
+
   const handleSignOut = () => {
     signOut(auth)
   }
@@ -38,8 +46,22 @@ export default function Admin() {
   const activeBookings = bookings.filter(b => ['awaiting_payment', 'confirmed', 'completed'].includes(b.bookingStatus))
 
   return (
-    <div className="pt-24 pb-24 min-h-screen bg-charcoal-900 flex flex-col md:flex-row">
-      
+    <div className="pt-24 pb-24 min-h-screen bg-charcoal-900 flex flex-col md:flex-row relative">
+      {/* Toast Notification */}
+      {notification && (
+        <div className="fixed top-24 right-4 z-50 max-w-sm w-full bg-charcoal-800 border-l-4 border-gold-500 shadow-2xl p-4 flex items-start gap-3 rounded-r-md animate-fade-in">
+          <div className="flex-1">
+            <h4 className="text-sm font-semibold text-cream-100 uppercase tracking-wider">
+              {notification.type === 'success' ? 'Success' : notification.type === 'error' ? 'Error' : 'Notification'}
+            </h4>
+            <p className="text-sm text-cream-400 mt-1">{notification.message}</p>
+          </div>
+          <button onClick={() => setNotification(null)} className="text-cream-400 hover:text-cream-200 text-lg leading-none">
+            &times;
+          </button>
+        </div>
+      )}
+
       {/* Sidebar Nav */}
       <div className="w-full md:w-64 bg-charcoal-800 border-r border-white/5 p-6 flex flex-col min-h-[calc(100vh-6rem)]">
         <div className="mb-10">
@@ -51,7 +73,7 @@ export default function Admin() {
           <NavButton icon={<Inbox size={18}/>} label={`Queue (${pendingBookings.length})`} active={activeTab === 'queue'} onClick={() => setActiveTab('queue')} />
           <NavButton icon={<Calendar size={18}/>} label="Calendar & Active" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
           <NavButton icon={<IndianRupee size={18}/>} label="Pricing Config" active={activeTab === 'pricing'} onClick={() => setActiveTab('pricing')} />
-          <NavButton icon={<ImageIcon size={18}/>} label="Gallery Manager" active={false} onClick={() => alert('Coming soon in next iteration')} />
+          <NavButton icon={<ImageIcon size={18}/>} label="Gallery Manager" active={false} onClick={() => setNotification({ type: 'info', message: 'Gallery Manager coming soon.' })} />
         </nav>
 
         <div className="mt-auto pt-6 border-t border-white/5">
@@ -65,15 +87,15 @@ export default function Admin() {
       <div className="flex-1 p-6 sm:p-10">
         
         {activeTab === 'queue' && (
-          <QueueView pendingBookings={pendingBookings} />
+          <QueueView pendingBookings={pendingBookings} setNotification={setNotification} />
         )}
 
         {activeTab === 'calendar' && (
-          <ActiveBookingsView bookings={activeBookings} />
+          <ActiveBookingsView bookings={activeBookings} setNotification={setNotification} />
         )}
 
         {activeTab === 'pricing' && (
-          <PricingManager />
+          <PricingManager setNotification={setNotification} />
         )}
         
       </div>
@@ -98,30 +120,35 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
 // SUBVIEWS
 // ==========================================
 
-function QueueView({ pendingBookings }: { pendingBookings: any[] }) {
-  
-  const handleApprove = async (booking: any) => {
-    // In a real app, this would open a modal to confirm the final `totalAmount` and `advanceAmount`
-    const total = booking.estimatedAmount
-    const advance = Math.min(5000, total) // Default advance logic
-    
+function QueueView({ pendingBookings, setNotification }: { pendingBookings: any[], setNotification: (n: any) => void }) {
+  const [approvingBooking, setApprovingBooking] = useState<any | null>(null)
+  const [customTotal, setCustomTotal] = useState<string>('')
+  const [customAdvance, setCustomAdvance] = useState<string>('5000')
+
+  const handleApprove = async () => {
+    if (!approvingBooking) return
+    const total = parseFloat(customTotal) || approvingBooking.estimatedAmount || 150000
+    const advance = parseFloat(customAdvance) || 5000
+
     try {
-      await updateDoc(doc(db, "bookings", booking.id), {
+      await updateDoc(doc(db, "bookings", approvingBooking.id), {
         bookingStatus: 'awaiting_payment',
         totalAmount: total,
         advanceAmount: advance,
+        amountPaid: 0,
         updatedAt: new Date()
       })
-      // Also update availability to 'confirmed' or 'awaiting_payment'
-      await setDoc(doc(db, "availability", booking.eventDate), {
-        status: 'confirmed',
-        bookingId: booking.id
+      
+      await setDoc(doc(db, "availability", approvingBooking.eventDate), {
+        status: 'held',
+        bookingId: approvingBooking.id
       }, { merge: true })
       
-      alert('Booking approved! Customer can now pay the advance.')
+      setNotification({ type: 'success', message: 'Booking approved! Customer can now pay.' })
+      setApprovingBooking(null)
     } catch(e) {
       console.error(e)
-      alert('Failed to approve')
+      setNotification({ type: 'error', message: 'Failed to approve booking' })
     }
   }
 
@@ -132,13 +159,21 @@ function QueueView({ pendingBookings }: { pendingBookings: any[] }) {
         bookingStatus: 'rejected',
         updatedAt: new Date()
       })
+      setNotification({ type: 'success', message: 'Booking rejected.' })
     } catch(e) {
       console.error(e)
+      setNotification({ type: 'error', message: 'Failed to reject booking' })
     }
   }
 
+  const startApproval = (booking: any) => {
+    setApprovingBooking(booking)
+    setCustomTotal(String(booking.estimatedAmount || 150000))
+    setCustomAdvance('5000')
+  }
+
   return (
-    <motion.div initial={{opacity:0}} animate={{opacity:1}}>
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} className="relative">
       <h2 className="text-2xl font-serif text-cream-100 mb-6">Pending Review</h2>
       {pendingBookings.length === 0 ? (
         <p className="text-cream-400 bg-charcoal-800 p-8 rounded-md border border-white/5 text-center">No pending bookings at the moment.</p>
@@ -162,25 +197,70 @@ function QueueView({ pendingBookings }: { pendingBookings: any[] }) {
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
                   <Button variant="outline" className="flex-1 md:flex-none border-red-500/50 text-red-400 hover:bg-red-500/10" onClick={() => handleReject(b.id)}>Reject</Button>
-                  <Button className="flex-1 md:flex-none" onClick={() => handleApprove(b)}>Approve & Set Price</Button>
+                  <Button className="flex-1 md:flex-none" onClick={() => startApproval(b)}>Approve & Set Price</Button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Price Configuration Modal */}
+      {approvingBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-charcoal-800 border border-white/10 p-8 rounded-lg max-w-md w-full shadow-2xl animate-scale-in">
+            <h3 className="text-xl font-serif text-cream-100 mb-4">Approve Booking</h3>
+            <p className="text-sm text-cream-400 mb-6">
+              Confirm or adjust the pricing for the event on <strong>{approvingBooking.eventDate ? format(new Date(approvingBooking.eventDate), 'MMMM do, yyyy') : 'TBD'}</strong>.
+            </p>
+            
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-cream-400 mb-2">Total Amount (₹)</label>
+                <input 
+                  type="number" 
+                  value={customTotal}
+                  onChange={(e) => setCustomTotal(e.target.value)}
+                  className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 focus:outline-none focus:border-gold-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-cream-400 mb-2">Advance Amount (₹)</label>
+                <input 
+                  type="number" 
+                  value={customAdvance}
+                  onChange={(e) => setCustomAdvance(e.target.value)}
+                  className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 focus:outline-none focus:border-gold-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button variant="outline" className="flex-1" onClick={() => setApprovingBooking(null)}>Cancel</Button>
+              <Button className="flex-1" onClick={handleApprove}>Confirm & Approve</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }
 
-function ActiveBookingsView({ bookings }: { bookings: any[] }) {
+function ActiveBookingsView({ bookings, setNotification }: { bookings: any[], setNotification: (n: any) => void }) {
   
   const handleMarkPaid = async (bookingId: string) => {
     if(!window.confirm('Mark advance as paid?')) return
-    await updateDoc(doc(db, "bookings", bookingId), {
-      bookingStatus: 'confirmed',
-      paymentStatus: 'advance_paid'
-    })
+    try {
+      await updateDoc(doc(db, "bookings", bookingId), {
+        bookingStatus: 'confirmed',
+        paymentStatus: 'advance_paid',
+        amountPaid: 5000 // Set default advance paid amount
+      })
+      setNotification({ type: 'success', message: 'Marked advance as paid.' })
+    } catch(e) {
+      console.error(e)
+      setNotification({ type: 'error', message: 'Failed to update payment status.' })
+    }
   }
 
   return (
@@ -232,7 +312,7 @@ function ActiveBookingsView({ bookings }: { bookings: any[] }) {
   )
 }
 
-function PricingManager() {
+function PricingManager({ setNotification }: { setNotification: (n: any) => void }) {
   const [tiers, setTiers] = useState<any[]>([])
   
   useEffect(() => {
@@ -257,8 +337,8 @@ function PricingManager() {
         </div>
 
         <div className="mt-8 pt-6 border-t border-white/5 flex gap-4">
-          <Button variant="outline">Add Tier</Button>
-          <Button>Save Changes</Button>
+          <Button variant="outline" onClick={() => setNotification({ type: 'info', message: 'Tiers are read-only in this demo.' })}>Add Tier</Button>
+          <Button onClick={() => setNotification({ type: 'info', message: 'Pricing tiers saved (simulated).' })}>Save Changes</Button>
         </div>
       </div>
     </motion.div>

@@ -81,6 +81,13 @@ export default {
       screens: {
         'xs': '375px',
       },
+      borderRadius: {
+        'md': '1rem',
+        'lg': '1.5rem',
+        'xl': '2rem',
+        '2xl': '2.5rem',
+        '3xl': '3rem',
+      },
     },
   },
   plugins: [],

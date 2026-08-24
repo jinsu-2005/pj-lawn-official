@@ -50,19 +50,39 @@ export const handler: Handler = async (event, context) => {
       // Payment successful, fulfill order
       if (getApps().length > 0) {
         const db = getFirestore();
-        await db.collection('bookings').doc(bookingId).update({
-          paymentStatus: 'paid',
-          bookingStatus: 'confirmed',
-          updatedAt: FieldValue.serverTimestamp()
-        });
-        
-        // Let's also ensure availability is updated to confirmed just in case
-        const bookingSnap = await db.collection('bookings').doc(bookingId).get();
-        const dateStr = bookingSnap.data()?.eventDate;
-        if (dateStr) {
-          await db.collection('availability').doc(dateStr).update({
-            status: 'confirmed'
+        const bookingRef = db.collection('bookings').doc(bookingId);
+        const bookingSnap = await bookingRef.get();
+        if (bookingSnap.exists) {
+          const bookingData = bookingSnap.data()!;
+          const orderIdParts = orderId.split('_');
+          const paymentType = orderIdParts[orderIdParts.length - 2];
+          
+          let paymentStatus = 'advance_paid';
+          let amountPaid = bookingData.advanceAmount || 5000;
+          
+          if (paymentType === 'full' || paymentType === 'remaining') {
+            paymentStatus = 'fully_paid';
+            amountPaid = bookingData.totalAmount || bookingData.estimatedAmount || 5000;
+          } else {
+            // It was an advance payment
+            paymentStatus = 'advance_paid';
+            amountPaid = bookingData.advanceAmount || 5000;
+          }
+          
+          await bookingRef.update({
+            paymentStatus: paymentStatus,
+            bookingStatus: 'confirmed',
+            amountPaid: amountPaid,
+            updatedAt: FieldValue.serverTimestamp()
           });
+          
+          // Let's also ensure availability is updated to confirmed just in case
+          const dateStr = bookingData.eventDate;
+          if (dateStr) {
+            await db.collection('availability').doc(dateStr).update({
+              status: 'confirmed'
+            });
+          }
         }
       }
       return { statusCode: 200, body: JSON.stringify({ status: 'PAID' }) };

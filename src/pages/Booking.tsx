@@ -125,21 +125,35 @@ export default function Booking() {
 
       const bookingId = await createBooking(bookingData)
 
-      // 4. Send EmailJS notification
-      if (import.meta.env.VITE_EMAILJS_SERVICE_ID && import.meta.env.VITE_EMAILJS_TEMPLATE_ID && import.meta.env.VITE_EMAILJS_PUBLIC_KEY) {
-        await emailjs.send(
-          import.meta.env.VITE_EMAILJS_SERVICE_ID,
-          import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-          {
-            booking_id: bookingId,
-            customer_name: data.name,
-            customer_phone: data.phone,
-            event_date: data.date,
-            event_type: data.eventType,
-            guest_count: data.guestCount
-          },
-          import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-        ).catch(err => console.error("EmailJS error:", err)) // Don't fail booking if email fails
+      // 4. Send EmailJS notifications (both Customer and Admin templates if configured)
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const customerTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const adminTemplateId = import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID;
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+      if (serviceId && publicKey) {
+        const templateParams = {
+          booking_id: bookingId,
+          customer_name: data.name,
+          customer_phone: data.phone,
+          customer_email: data.email || user.email || '',
+          event_date: data.date,
+          event_type: data.eventType,
+          guest_count: data.guestCount,
+          notes: data.notes || ''
+        };
+
+        // Send customer confirmation
+        if (customerTemplateId) {
+          emailjs.send(serviceId, customerTemplateId, templateParams, publicKey)
+            .catch(err => console.error("EmailJS customer booking error:", err));
+        }
+
+        // Send admin notification
+        if (adminTemplateId) {
+          emailjs.send(serviceId, adminTemplateId, templateParams, publicKey)
+            .catch(err => console.error("EmailJS admin booking error:", err));
+        }
       }
 
       setStep(4)

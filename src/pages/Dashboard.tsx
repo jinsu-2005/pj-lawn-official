@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { DownloadReceiptButton } from '@/components/ReceiptPDF'
 import { load } from '@cashfreepayments/cashfree-js'
+import emailjs from '@emailjs/browser'
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
@@ -58,13 +59,23 @@ export default function Dashboard() {
     })
   }
 
-  const handlePayment = async (booking: any) => {
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null);
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
+  const handlePayment = async (booking: any, paymentType: 'advance' | 'full' | 'remaining') => {
     setPayingBookingId(booking.id)
     try {
       // 1. Create order on backend
       const res = await fetch('/.netlify/functions/create-cashfree-order', {
         method: 'POST',
-        body: JSON.stringify({ bookingId: booking.id })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: booking.id, paymentType })
       });
       const data = await res.json();
       
@@ -82,25 +93,52 @@ export default function Dashboard() {
 
       if (result.error) {
         console.error("Payment error:", result.error);
-        alert("Payment was not completed. Please try again.");
+        setNotification({ type: 'error', message: "Payment was not completed. Please try again." });
       } else if (result.paymentDetails) {
         // 3. Verify on backend
         const verifyRes = await fetch('/.netlify/functions/verify-cashfree-payment', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ orderId: data.order_id, bookingId: booking.id })
         });
         const verifyData = await verifyRes.json();
         
         if (verifyData.status === 'PAID') {
-          alert('Payment successful! Your booking is confirmed.');
+          setNotification({ type: 'success', message: 'Payment successful! Your booking is confirmed.' });
+          
+          // Trigger EmailJS on payment success
+          const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+          const templateId = import.meta.env.VITE_EMAILJS_PAYMENT_TEMPLATE_ID || import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+          const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+          
+          if (serviceId && templateId && publicKey) {
+            const amount = paymentType === 'full' ? booking.totalAmount : paymentType === 'remaining' ? ((booking.totalAmount || 0) - (booking.amountPaid || 0)) : booking.advanceAmount;
+            const pStatus = paymentType === 'full' ? 'fully_paid' : paymentType === 'remaining' ? 'fully_paid' : 'advance_paid';
+            
+            emailjs.send(
+              serviceId,
+              templateId,
+              {
+                booking_id: booking.id,
+                customer_name: booking.userName || user.displayName || 'Customer',
+                customer_email: booking.userEmail || user.email || '',
+                amount_paid: amount,
+                payment_status: pStatus,
+                event_date: booking.eventDate,
+                event_type: booking.eventType
+              },
+              publicKey
+            ).catch(err => console.error("EmailJS payment success notification error:", err));
+          }
+          
           await fetchBookings(user.uid);
         } else {
-          alert(`Payment status is ${verifyData.status}. Please check later or contact support.`);
+          setNotification({ type: 'info', message: `Payment status is ${verifyData.status}. Please check later or contact support.` });
         }
       }
     } catch (e: any) {
       console.error(e);
-      alert('Error initiating payment: ' + e.message);
+      setNotification({ type: 'error', message: 'Error initiating payment: ' + e.message });
     } finally {
       setPayingBookingId(null);
     }
@@ -111,7 +149,22 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="pt-32 pb-24 min-h-screen bg-charcoal-900">
+    <div className="pt-32 pb-24 min-h-screen bg-charcoal-900 relative">
+      {/* Toast Notification */}
+      {notification && (
+        <div className="fixed top-24 right-4 z-50 max-w-sm w-full bg-charcoal-800 border-l-4 border-gold-500 shadow-2xl p-4 flex items-start gap-3 rounded-r-md animate-fade-in">
+          <div className="flex-1">
+            <h4 className="text-sm font-semibold text-cream-100 uppercase tracking-wider">
+              {notification.type === 'success' ? 'Success' : notification.type === 'error' ? 'Error' : 'Notification'}
+            </h4>
+            <p className="text-sm text-cream-400 mt-1">{notification.message}</p>
+          </div>
+          <button onClick={() => setNotification(null)} className="text-cream-400 hover:text-cream-200 text-lg leading-none">
+            &times;
+          </button>
+        </div>
+      )}
+
       <section className="container mx-auto px-4 mb-8">
         <div className="flex flex-col md:flex-row justify-between items-center bg-charcoal-800 border border-white/5 p-6 rounded-md mb-12">
           <div>
@@ -175,7 +228,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-cream-400 text-xs uppercase tracking-wider">Paid</span>
-                        <span className="text-gold-400 font-medium">₹{(booking.amountPaid || booking.advanceAmount || 0).toLocaleString()}</span>
+                        <span className="text-gold-400 font-medium">₹{(booking.amountPaid || 0).toLocaleString()}</span>
                       </div>
                     </div>
                     
@@ -189,15 +242,39 @@ export default function Dashboard() {
                     )}
 
                     {booking.bookingStatus === 'awaiting_payment' && (
-                      <div className="mt-4">
+                      <div className="mt-4 space-y-2">
                         <Button 
-                          className="w-full bg-blue-600 hover:bg-blue-500 text-white" 
-                          onClick={() => handlePayment(booking)}
+                          className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs py-2" 
+                          onClick={() => handlePayment(booking, 'advance')}
                           disabled={payingBookingId === booking.id}
                         >
-                          {payingBookingId === booking.id ? 'Processing...' : `Pay Advance (₹${booking.advanceAmount.toLocaleString()})`}
+                          {payingBookingId === booking.id ? 'Processing...' : `Pay Advance (₹${booking.advanceAmount?.toLocaleString()})`}
+                        </Button>
+                        <Button 
+                          className="w-full bg-gold-500 hover:bg-gold-400 text-charcoal-900 text-xs py-2" 
+                          onClick={() => handlePayment(booking, 'full')}
+                          disabled={payingBookingId === booking.id}
+                        >
+                          {payingBookingId === booking.id ? 'Processing...' : `Pay Full (₹${booking.totalAmount?.toLocaleString()})`}
                         </Button>
                       </div>
+                    )}
+
+                    {booking.bookingStatus === 'confirmed' && booking.paymentStatus === 'advance_paid' && (
+                      (() => {
+                        const remaining = (booking.totalAmount || 0) - (booking.amountPaid || 0);
+                        return remaining > 0 ? (
+                          <div className="mt-4">
+                            <Button 
+                              className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs py-2" 
+                              onClick={() => handlePayment(booking, 'remaining')}
+                              disabled={payingBookingId === booking.id}
+                            >
+                              {payingBookingId === booking.id ? 'Processing...' : `Pay Balance (₹${remaining.toLocaleString()})`}
+                            </Button>
+                          </div>
+                        ) : null;
+                      })()
                     )}
 
                     {booking.bookingStatus === 'pending_review' && (
