@@ -33,4 +33,7 @@ yarn-error.log*
 
 # Netlify & Skills
 .netlify
-.agent/skills/cashfree-skills/
+.agent/
+.agents/
+AGENTS.md
+.gemini/

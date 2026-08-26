@@ -85,14 +85,41 @@ export const handler: Handler = async (event, context) => {
       parts: [{ text: message }]
     });
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: contents,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.7,
+    const fallbackModels = [
+      'gemini-3.7-flash',
+      'gemini-3.6-flash',
+      'gemini-3.5-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.1-flash-lite',
+      'gemini-3.0-flash',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite'
+    ];
+
+    let response;
+    let lastError;
+
+    for (const model of fallbackModels) {
+      try {
+        response = await ai.models.generateContent({
+          model: model,
+          contents: contents,
+          config: {
+            systemInstruction: systemInstruction,
+            temperature: 0.7,
+          }
+        });
+        break; // Success! Exit the loop.
+      } catch (err: any) {
+        console.warn(`Chatbot model ${model} failed:`, err?.message || err);
+        lastError = err;
+        // Continue to the next model in the fallback list
       }
-    });
+    }
+
+    if (!response) {
+      throw lastError || new Error('All available AI models failed to respond due to quota or server errors.');
+    }
 
     return {
       statusCode: 200,
