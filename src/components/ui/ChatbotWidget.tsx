@@ -282,7 +282,7 @@ export function ChatbotWidget() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="fixed bottom-6 right-6 w-full max-w-[350px] h-[520px] bg-charcoal-900/95 backdrop-blur-xl border border-gold-500/30 shadow-[0_0_40px_-8px_rgba(212,175,55,0.28),0_20px_40px_-15px_rgba(0,0,0,0.8)] rounded-2xl flex flex-col z-50 overflow-hidden overscroll-contain sm:right-6 sm:w-[400px]"
+            className="fixed bottom-4 right-4 left-4 sm:left-auto w-auto sm:w-[400px] max-w-full sm:max-w-[400px] h-[500px] sm:h-[550px] bg-charcoal-900/95 backdrop-blur-xl border border-gold-500/30 shadow-[0_0_40px_-8px_rgba(212,175,55,0.28),0_20px_40px_-15px_rgba(0,0,0,0.8)] rounded-2xl flex flex-col z-50 overflow-hidden overscroll-contain sm:right-6 sm:bottom-6"
           >
             {/* Header */}
             <div className="bg-charcoal-800/90 p-4 border-b border-white/10 flex justify-between items-center">

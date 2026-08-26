@@ -547,6 +547,29 @@ function QueueView({ pendingBookings, setNotification }: { pendingBookings: any[
 function ActiveBookingsView({ bookings, setNotification }: { bookings: any[], setNotification: (n: any) => void }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [confirmMarkPaidId, setConfirmMarkPaidId] = useState<string | null>(null)
+  const [dateToBlock, setDateToBlock] = useState('')
+
+  const handleBlockDate = async () => {
+    if (!dateToBlock) return
+    try {
+      await setDoc(doc(db, "availability", dateToBlock), { status: 'blocked', reason: 'manual' })
+      setNotification({ type: 'success', message: `Date ${dateToBlock} blocked successfully.` })
+      setDateToBlock('')
+    } catch(e) {
+      setNotification({ type: 'error', message: 'Failed to block date.' })
+    }
+  }
+
+  const handleUnblockDate = async () => {
+    if (!dateToBlock) return
+    try {
+      await deleteDoc(doc(db, "availability", dateToBlock))
+      setNotification({ type: 'success', message: `Date ${dateToBlock} unblocked successfully.` })
+      setDateToBlock('')
+    } catch(e) {
+      setNotification({ type: 'error', message: 'Failed to unblock date.' })
+    }
+  }
 
   const toggleSelectAll = () => {
     if (selectedIds.length === bookings.length) {
@@ -612,6 +635,24 @@ function ActiveBookingsView({ bookings, setNotification }: { bookings: any[], se
   return (
     <motion.div initial={{opacity:0}} animate={{opacity:1}}>
       <h2 className="text-2xl font-serif text-cream-100 mb-6">Active Bookings</h2>
+
+      {/* Manual Date Blocking */}
+      <div className="bg-charcoal-800 border border-white/5 p-4 rounded-md mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center shadow-lg">
+        <div>
+          <h3 className="text-lg font-serif text-cream-100">Manage Availability</h3>
+          <p className="text-xs text-cream-400">Manually block or unblock specific dates.</p>
+        </div>
+        <div className="flex gap-2 items-center w-full sm:w-auto">
+          <input 
+            type="date" 
+            value={dateToBlock}
+            onChange={e => setDateToBlock(e.target.value)}
+            className="flex-1 sm:w-auto bg-charcoal-900 border border-white/10 rounded-md px-3 py-1.5 text-cream-200 text-sm focus:outline-none focus:border-gold-500" 
+          />
+          <Button size="sm" onClick={handleBlockDate} className="bg-red-500 hover:bg-red-400 text-white border-none shrink-0">Block</Button>
+          <Button size="sm" variant="outline" onClick={handleUnblockDate} className="shrink-0">Unblock</Button>
+        </div>
+      </div>
 
       {confirmMarkPaidId && (
         <div className="fixed inset-0 z-50 bg-charcoal-900/95 backdrop-blur-md flex items-center justify-center p-4">

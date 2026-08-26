@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/Button'
 import { Phone } from 'lucide-react'
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
 
-// Images
-import entranceImg from '@/assets/gallery/5.jpg?format=webp&w=800&as=url'
-import familyImg from '@/assets/gallery/1.png?format=webp&w=1200&as=url'
+// Static Images
+const entranceImg = '/gallery/5.jpg'
+const familyImg = '/gallery/1.png'
 
 const fadeUp: any = {
   hidden: { opacity: 0, y: 30 },
@@ -42,7 +42,7 @@ export default function About() {
           >
             <div className="relative aspect-[3/4] max-w-md mx-auto lg:mx-0 rounded-md overflow-hidden">
               <img 
-                src={typeof entranceImg === 'string' ? entranceImg : (entranceImg as unknown as string)}
+                src={entranceImg}
                 alt="PJ Lawn Entrance Sign" 
                 className="w-full h-full object-cover"
               />
@@ -62,7 +62,7 @@ export default function About() {
                 Welcome to PJ Lawn, an elegant outdoor event venue located in the heart of Nagercoil. Nestled in a lush, green setting, we provide the perfect open-air canvas for your most cherished celebrations.
               </p>
               <p>
-                From daytime gatherings under the tropical sun to magical evening events illuminated by ambient fairy lights, our venue is designed to be versatile, welcoming, and memorable. Whether you're planning an intimate family function or a grand wedding reception, PJ Lawn offers a relaxed atmosphere that your guests will love.
+                From sunset gatherings to magical evening events illuminated by ambient fairy lights, our venue is designed to be versatile, welcoming, and memorable. Whether you're planning an intimate family function or a grand wedding reception, PJ Lawn offers a relaxed atmosphere that your guests will love.
               </p>
               <p>
                 With flexible capacity ranging from 50 to 300 guests, essential amenities, and dedicated space for elaborate dining and buffet setups, we are committed to helping you host your celebration, your way.
@@ -80,7 +80,7 @@ export default function About() {
           className="relative h-[60vh] min-h-[400px]"
         >
           <img 
-            src={typeof familyImg === 'string' ? familyImg : (familyImg as unknown as string)}
+            src={familyImg}
             alt="Family gathering at PJ Lawn" 
             className="w-full h-full object-cover object-center"
           />

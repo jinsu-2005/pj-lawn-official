@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/Button'
 import { getPricingTiers } from '@/lib/bookingService'
 
 // Import images with imagetools query (they'll be optimized at build)
-import heroImg from '@/assets/gallery/3.png?format=webp&w=1920&as=url'
-import aboutImg from '@/assets/gallery/2.png?format=webp&w=800&as=url'
-import buffetImg from '@/assets/gallery/4.png?format=webp&w=1920&as=url'
-import amenitiesImg from '@/assets/gallery/6.png?format=webp&w=1920&as=url'
+// Static paths for optimized public assets
+const heroImg = '/gallery/3.png'
+const aboutImg = '/gallery/2.png'
+const buffetImg = '/gallery/4.png'
+const amenitiesImg = '/gallery/6.png'
 
 import { Variants } from 'framer-motion'
 
@@ -68,7 +69,7 @@ export default function Home() {
       <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
-            src={typeof heroImg === 'string' ? heroImg : (heroImg as unknown as string)} 
+            src={heroImg} 
             alt="PJ Lawn Venue at Night" 
             className="w-full h-full object-cover object-center"
           />
@@ -107,8 +108,14 @@ export default function Home() {
       {/* 2. Occasions Strip (Infinite scroll animation) */}
       <section className="py-12 border-b border-white/5 bg-charcoal-900 overflow-hidden flex whitespace-nowrap">
         <div className="animate-shimmer flex gap-4 pr-4 w-[200%] hover:pause-shimmer transition-all duration-300">
-          {[...occasions, ...occasions].map((occasion, i) => (
+          {occasions.map((occasion, i) => (
             <span key={i} className="px-6 py-2 rounded-full border border-white/10 text-cream-400 text-sm tracking-wide cursor-default hover:text-gold-400 hover:border-gold-500/30 transition-colors">
+              {occasion}
+            </span>
+          ))}
+          {/* Duplicated for infinite loop effect with aria-hidden for accessibility */}
+          {occasions.map((occasion, i) => (
+            <span key={`dup-${i}`} aria-hidden="true" className="px-6 py-2 rounded-full border border-white/10 text-cream-400 text-sm tracking-wide cursor-default hover:text-gold-400 hover:border-gold-500/30 transition-colors">
               {occasion}
             </span>
           ))}
@@ -124,7 +131,7 @@ export default function Home() {
             className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-2xl shadow-black/50"
           >
             <img 
-              src={typeof aboutImg === 'string' ? aboutImg : (aboutImg as unknown as string)}
+              src={aboutImg}
               alt="PJ Lawn Seating and Brand Wall" 
               className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105"
             />
@@ -154,7 +161,7 @@ export default function Home() {
       <section className="relative h-[60vh] min-h-[500px] flex items-center justify-center overflow-hidden group">
          <div className="absolute inset-0 z-0">
           <img 
-            src={typeof buffetImg === 'string' ? buffetImg : (buffetImg as unknown as string)}
+            src={buffetImg}
             alt="PJ Lawn Buffet Area" 
             className="w-full h-full object-cover object-center transition-transform duration-[10s] ease-linear group-hover:scale-110"
           />
@@ -190,7 +197,7 @@ export default function Home() {
       <section className="relative py-32 overflow-hidden group">
         <div className="absolute inset-0 z-0">
           <img 
-            src={typeof amenitiesImg === 'string' ? amenitiesImg : (amenitiesImg as unknown as string)}
+            src={amenitiesImg}
             alt="PJ Lawn Handwash Amenities" 
             className="w-full h-full object-cover object-center transition-transform duration-[15s] ease-linear group-hover:scale-110"
           />

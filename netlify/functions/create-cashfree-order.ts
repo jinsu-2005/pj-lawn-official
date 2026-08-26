@@ -93,9 +93,9 @@ export const handler: Handler = async (event, context) => {
         return { statusCode: 400, body: JSON.stringify({ error: 'Order amount must be greater than zero' }) };
       }
 
-      customerPhone = bookingData.phone || "9999999999";
+      customerPhone = bookingData.userPhone || bookingData.phone || "9999999999";
       customerId = bookingData.userId || "guest";
-      customerName = bookingData.name || "Guest";
+      customerName = bookingData.userName || bookingData.name || "Guest";
       customerEmail = `${customerId}@pjlawn.local`; 
     }
 

@@ -47,16 +47,13 @@ export const handler: Handler = async (event, context) => {
     const timestamp = event.headers["x-webhook-timestamp"] || "";
     const rawBody = event.body || "";
 
-    Cashfree.XClientId = process.env.CASHFREE_APP_ID || "";
-    Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY || "";
-    Cashfree.XEnvironment = process.env.NODE_ENV === "production" 
-      ? CFEnvironment.PRODUCTION 
-      : CFEnvironment.SANDBOX;
+    const env = process.env.CASHFREE_ENV === 'production' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
+    const cashfree = new Cashfree(env, process.env.CASHFREE_APP_ID || '', process.env.CASHFREE_SECRET_KEY || '');
+    cashfree.XApiVersion = "2025-01-01";
 
     // Verify Signature
-    const cashfree = new Cashfree();
     try {
-      Cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
+      cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
     } catch (err) {
       console.error("Webhook signature verification failed:", err);
       return { statusCode: 400, body: "Invalid signature" };
@@ -76,33 +73,45 @@ export const handler: Handler = async (event, context) => {
 
     if (!bookingId) {
        return { statusCode: 200, body: "OK (No Booking ID in order)" };
-    }
+     }
 
     switch (type) {
       case "PAYMENT_SUCCESS_WEBHOOK":
         if (paymentStatus === "SUCCESS") {
           // Verify with backend before fulfilling
-          const response = await Cashfree.PGOrderFetchPayments("2025-01-01", orderId);
+          const response = await cashfree.PGOrderFetchPayments("2025-01-01", orderId);
           const payments = response.data;
           const successfulPayment = payments?.filter((p: any) => p.payment_status === "SUCCESS");
 
           if (successfulPayment && successfulPayment.length > 0) {
+            // Determine payment type from order ID (format: order_{bookingId}_{paymentType}_{timestamp})
+            const orderIdParts = orderId.split("_");
+            const paymentType = orderIdParts.length >= 3 ? orderIdParts[orderIdParts.length - 2] : 'advance';
+            
+            const bookingDoc = await db.collection("bookings").doc(bookingId).get();
+            const bData = bookingDoc.exists ? bookingDoc.data() : null;
+            
+            let paymentStatus = 'advance_paid';
+            let amountPaid = bData?.advanceAmount || 5000;
+            
+            if (paymentType === 'full' || paymentType === 'remaining') {
+              paymentStatus = 'fully_paid';
+              amountPaid = bData?.totalAmount || bData?.estimatedAmount || 5000;
+            }
+            
             // Update Firestore
             await db.collection("bookings").doc(bookingId).update({
-              paymentStatus: "advance_paid",
+              paymentStatus: paymentStatus,
               bookingStatus: "confirmed",
+              amountPaid: amountPaid,
               updatedAt: new Date()
             });
 
             // Make sure the availability is confirmed
-            const bookingDoc = await db.collection("bookings").doc(bookingId).get();
-            if (bookingDoc.exists) {
-               const bData = bookingDoc.data();
-               if (bData && bData.eventDate) {
-                 await db.collection("availability").doc(bData.eventDate).update({
-                   status: "confirmed"
-                 });
-               }
+            if (bData && bData.eventDate) {
+              await db.collection("availability").doc(bData.eventDate).update({
+                status: "confirmed"
+              });
             }
           }
         }

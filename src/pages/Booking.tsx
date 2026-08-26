@@ -11,6 +11,8 @@ import 'react-day-picker/dist/style.css'
 import { auth, googleProvider } from '@/lib/firebase'
 import { signInWithPopup, onAuthStateChanged } from 'firebase/auth'
 import { checkAndHoldDate, createBooking, getPricingTiers, PricingTier } from '@/lib/bookingService'
+import { db } from '@/lib/firebase'
+import { collection, onSnapshot } from 'firebase/firestore'
 
 const bookingSchema = z.object({
   date: z.string().min(1, 'Date is required'),
@@ -18,7 +20,7 @@ const bookingSchema = z.object({
   phone: z.string().min(10, 'Valid phone number is required'),
   email: z.string().email('Valid email is required').optional().or(z.literal('')),
   eventType: z.string().min(1, 'Event type is required'),
-  guestCount: z.number().min(50, 'Minimum 50 guests').max(500, 'Maximum 500 guests'),
+  guestCount: z.number().min(50, 'Minimum 50 guests').max(300, 'Maximum 300 guests'),
   notes: z.string().optional()
 })
 
@@ -31,12 +33,13 @@ export default function Booking() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [unavailableDates, setUnavailableDates] = useState<Date[]>([])
 
   const { register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       guestCount: 100,
-      eventType: 'Wedding Reception'
+      eventType: 'Birthday Party'
     },
     mode: 'onChange'
   })
@@ -77,6 +80,19 @@ export default function Booking() {
     }).catch(console.error)
   }, [])
 
+  // Sync real-time unavailable dates from Firestore
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "availability"), (snapshot) => {
+      const dates: Date[] = []
+      snapshot.forEach(doc => {
+        // doc.id is yyyy-MM-dd format
+        dates.push(new Date(`${doc.id}T00:00:00`))
+      })
+      setUnavailableDates(dates)
+    })
+    return () => unsubscribe()
+  }, [])
+
   useEffect(() => {
     if (pricingTiers.length > 0 && watchGuestCount) {
       const tier = pricingTiers.find(t => watchGuestCount >= t.minGuests && watchGuestCount <= t.maxGuests)
@@ -102,6 +118,29 @@ export default function Booking() {
     } else if (step === 2) {
       if (!watchName || !watchPhone) {
         setError('Please fill in required contact details.')
+        return
+      }
+      setStep(3)
+    }
+  }
+
+  const navigateToStep = (targetStep: number) => {
+    setError(null)
+    if (targetStep === 1) {
+      setStep(1)
+    } else if (targetStep === 2) {
+      if (!watchDate) {
+        setError('Please select a date first.')
+        return
+      }
+      setStep(2)
+    } else if (targetStep === 3) {
+      if (!watchDate) {
+        setError('Please select a date first.')
+        return
+      }
+      if (!watchName || !watchPhone) {
+        setError('Please fill in contact details first.')
         return
       }
       setStep(3)
@@ -197,20 +236,34 @@ export default function Booking() {
             
             {step < 4 && (
               <div className="flex justify-between items-center mb-12 border-b border-white/5 pb-6">
-                <div className={`flex items-center gap-2 ${step >= 1 ? 'text-gold-400' : 'text-cream-400/50'}`}>
+                <button 
+                  type="button"
+                  onClick={() => navigateToStep(1)}
+                  className={`flex items-center gap-2 text-left focus:outline-none transition-opacity ${step >= 1 ? 'text-gold-400' : 'text-cream-400/50'}`}
+                >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${step >= 1 ? 'bg-gold-500 text-charcoal-900' : 'bg-charcoal-700 text-cream-400/50'}`}>1</div>
                   <span className="text-sm font-medium hidden sm:inline">Select Date</span>
-                </div>
+                </button>
                 <div className="h-px bg-white/5 flex-1 mx-4" />
-                <div className={`flex items-center gap-2 ${step >= 2 ? 'text-gold-400' : 'text-cream-400/50'}`}>
+                <button 
+                  type="button"
+                  disabled={!watchDate}
+                  onClick={() => navigateToStep(2)}
+                  className={`flex items-center gap-2 text-left focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-opacity ${step >= 2 ? 'text-gold-400' : 'text-cream-400/50'}`}
+                >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${step >= 2 ? 'bg-gold-500 text-charcoal-900' : 'bg-charcoal-700 text-cream-400/50'}`}>2</div>
                   <span className="text-sm font-medium hidden sm:inline">Event Details</span>
-                </div>
+                </button>
                 <div className="h-px bg-white/5 flex-1 mx-4" />
-                <div className={`flex items-center gap-2 ${step >= 3 ? 'text-gold-400' : 'text-cream-400/50'}`}>
+                <button 
+                  type="button"
+                  disabled={!watchDate || !watchName || !watchPhone}
+                  onClick={() => navigateToStep(3)}
+                  className={`flex items-center gap-2 text-left focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-opacity ${step >= 3 ? 'text-gold-400' : 'text-cream-400/50'}`}
+                >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center font-medium ${step >= 3 ? 'bg-gold-500 text-charcoal-900' : 'bg-charcoal-700 text-cream-400/50'}`}>3</div>
                   <span className="text-sm font-medium hidden sm:inline">Review & Submit</span>
-                </div>
+                </button>
               </div>
             )}
 
@@ -246,33 +299,45 @@ export default function Booking() {
                         --rdp-background-color: rgba(212, 175, 55, 0.1);
                         --rdp-accent-color-dark: #F3E5AB; /* cream-100 */
                         --rdp-background-color-dark: rgba(212, 175, 55, 0.2);
-                        --rdp-outline: 2px solid var(--rdp-accent-color);
-                        --rdp-outline-selected: 2px solid var(--rdp-accent-color);
                         color: #E2DFD2;
                         margin: 0;
                       }
+                      /* Available Dates (Green Outline) */
+                      .rdp-day {
+                        border: 1px solid rgba(34, 197, 94, 0.4);
+                        border-radius: 4px;
+                      }
+                      /* Hover effect for available dates */
+                      .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+                        background-color: rgba(34, 197, 94, 0.15);
+                      }
+                      /* Selected Date (Solid Gold) */
                       .rdp-day_selected, .rdp-day_selected:focus-visible, .rdp-day_selected:hover {
                         color: #1A1A1A;
-                        background-color: #D4AF37;
+                        background-color: #D4AF37 !important;
+                        border-color: #D4AF37 !important;
                       }
-                      .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
-                        background-color: rgba(255, 255, 255, 0.1);
-                      }
+                      /* Unavailable/Disabled Dates (Red + Strikethrough) */
                       .rdp-day_disabled {
-                        opacity: 0.25;
+                        opacity: 1;
+                        background-color: rgba(239, 68, 68, 0.1) !important;
+                        color: #ef4444 !important;
+                        border: 1px solid rgba(239, 68, 68, 0.3) !important;
+                        text-decoration: line-through;
+                        cursor: not-allowed;
                       }
                     `}</style>
                     <DayPicker 
                       mode="single"
                       selected={selectedDateObj}
                       onSelect={handleDateSelect}
-                      disabled={[{ before: new Date() }]}
+                      disabled={[{ before: new Date() }, ...unavailableDates]}
                       className="p-4"
                     />
                     
                     <div className="flex gap-4 mt-2 pt-6 border-t border-white/5 w-full max-w-[280px] justify-center text-xs text-cream-400">
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm border border-white/20"></div>
+                        <div className="w-2.5 h-2.5 rounded-sm border border-green-500/40"></div>
                         <span>Available</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -280,7 +345,7 @@ export default function Booking() {
                         <span className="text-cream-200">Selected</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-white/10"></div>
+                        <div className="w-2.5 h-2.5 rounded-sm bg-red-500/10 border border-red-500/30"></div>
                         <span>Unavailable</span>
                       </div>
                     </div>
@@ -325,15 +390,15 @@ export default function Booking() {
                       <div className="space-y-2">
                         <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Event Type</label>
                         <select {...register('eventType')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 appearance-none">
-                          <option value="Wedding Reception">Wedding Reception</option>
                           <option value="Birthday Party">Birthday Party</option>
-                          <option value="Corporate Event">Corporate Event</option>
-                          <option value="Engagement Party">Engagement Party</option>
                           <option value="Anniversary">Anniversary</option>
+                          <option value="Family Function">Family Function</option>
+                          <option value="Wedding Reception">Wedding Reception</option>
+                          <option value="Engagement Party">Engagement Party</option>
                           <option value="Baby Shower">Baby Shower</option>
-                          <option value="Photo/Video Shoot">Photo / Video Shoot</option>
                           <option value="Get-Together">Family/Friends Get-Together</option>
-                          <option value="Workshop">Workshop / Seminar</option>
+                          <option value="Dinner Function">Dinner Function</option>
+                          <option value="Photo/Video Shoot">Photo / Video Shoot</option>
                           <option value="Other">Other</option>
                         </select>
                       </div>

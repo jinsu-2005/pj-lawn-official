@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { Calendar, LogOut, Copy, Check, CheckCircle2, Clock, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { auth, db } from '@/lib/firebase'
-import { collection, query, where, getDocs } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
-import { DownloadReceiptButton } from '@/components/ReceiptPDF'
+const DownloadReceiptButton = lazy(() => import('@/components/ReceiptPDF').then(m => ({ default: m.DownloadReceiptButton })))
 import { load } from '@cashfreepayments/cashfree-js'
-import emailjs from '@emailjs/browser'
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
@@ -19,39 +18,47 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    let unsubscribeBookings: (() => void) | null = null
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser)
-        await fetchBookings(currentUser.uid)
+        
+        // Subscribe to bookings in real-time
+        const q = query(
+          collection(db, "bookings"),
+          where("userId", "==", currentUser.uid)
+        )
+        
+        unsubscribeBookings = onSnapshot(q, (snapshot) => {
+          const bks: any[] = []
+          snapshot.forEach((doc) => {
+            bks.push({ id: doc.id, ...doc.data() })
+          })
+          
+          // Sort in memory since we didn't index
+          bks.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0))
+          setBookings(bks)
+          setLoading(false)
+        }, (err) => {
+          console.error("Error listening to bookings:", err)
+          setLoading(false)
+        })
       } else {
+        setUser(null)
+        setBookings([])
+        setLoading(false)
         navigate('/book')
       }
-      setLoading(false)
     })
-    return () => unsubscribe()
-  }, [navigate])
 
-  const fetchBookings = async (uid: string) => {
-    try {
-      const q = query(
-        collection(db, "bookings"), 
-        where("userId", "==", uid),
-        // orderBy("createdAt", "desc") // Requires index, skipping for now
-      )
-      const querySnapshot = await getDocs(q)
-      const bks: any[] = []
-      querySnapshot.forEach((doc) => {
-        bks.push({ id: doc.id, ...doc.data() })
-      })
-      
-      // Sort in memory since we didn't index
-      bks.sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis())
-      
-      setBookings(bks)
-    } catch (err) {
-      console.error("Error fetching bookings:", err)
+    return () => {
+      unsubscribeAuth()
+      if (unsubscribeBookings) {
+        unsubscribeBookings()
+      }
     }
-  }
+  }, [navigate])
 
   const handleSignOut = () => {
     signOut(auth).then(() => {
@@ -105,33 +112,6 @@ export default function Dashboard() {
         
         if (verifyData.status === 'PAID') {
           setNotification({ type: 'success', message: 'Payment successful! Your booking is confirmed.' });
-          
-          // Trigger EmailJS on payment success
-          const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-          const templateId = import.meta.env.VITE_EMAILJS_PAYMENT_TEMPLATE_ID || import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-          const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-          
-          if (serviceId && templateId && publicKey) {
-            const amount = paymentType === 'full' ? booking.totalAmount : paymentType === 'remaining' ? ((booking.totalAmount || 0) - (booking.amountPaid || 0)) : booking.advanceAmount;
-            const pStatus = paymentType === 'full' ? 'fully_paid' : paymentType === 'remaining' ? 'fully_paid' : 'advance_paid';
-            
-            emailjs.send(
-              serviceId,
-              templateId,
-              {
-                booking_id: booking.id,
-                customer_name: booking.userName || user.displayName || 'Customer',
-                customer_email: booking.userEmail || user.email || '',
-                amount_paid: amount,
-                payment_status: pStatus,
-                event_date: booking.eventDate,
-                event_type: booking.eventType
-              },
-              publicKey
-            ).catch(err => console.error("EmailJS payment success notification error:", err));
-          }
-          
-          await fetchBookings(user.uid);
         } else {
           setNotification({ type: 'info', message: `Payment status is ${verifyData.status}. Please check later or contact support.` });
         }
@@ -313,10 +293,12 @@ export default function Dashboard() {
                       )}
 
                       {['confirmed', 'completed'].includes(booking.bookingStatus) && (
-                        <DownloadReceiptButton 
-                          booking={booking} 
-                          className="w-full flex items-center justify-center gap-2 bg-charcoal-800 border border-white/10 text-cream-200 hover:text-white px-4 py-2 rounded-md text-sm hover:bg-charcoal-700 transition-colors"
-                        />
+                        <Suspense fallback={<div className="text-center text-xs text-cream-400 py-2">Loading generator...</div>}>
+                          <DownloadReceiptButton 
+                            booking={booking} 
+                            className="w-full flex items-center justify-center gap-2 bg-charcoal-800 border border-white/10 text-cream-200 hover:text-white px-4 py-2 rounded-md text-sm hover:bg-charcoal-700 transition-colors"
+                          />
+                        </Suspense>
                       )}
 
                       {booking.bookingStatus === 'pending_review' && (

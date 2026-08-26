@@ -2,10 +2,10 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Sparkles, Heart, Utensils, Users } from 'lucide-react'
 
-// Images for visual sections
-import intimateImg from '@/assets/gallery/1.png?format=webp&w=800&as=url'
-import layoutImg from '@/assets/gallery/2.png?format=webp&w=800&as=url'
-import buffetImg from '@/assets/gallery/4.png?format=webp&w=800&as=url'
+// Static images for visual sections
+const intimateImg = '/gallery/1.png'
+const layoutImg = '/gallery/2.png'
+const buffetImg = '/gallery/4.png'
 
 const eventCategories = [
   {
@@ -118,7 +118,7 @@ export default function Events() {
             className="relative aspect-video md:aspect-[4/3] rounded-xl overflow-hidden border border-white/10 shadow-xl"
           >
             <img 
-              src={typeof layoutImg === 'string' ? layoutImg : (layoutImg as unknown as string)}
+              src={layoutImg}
               alt="PJ Lawn Venue Layout" 
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
             />
@@ -128,7 +128,7 @@ export default function Events() {
             className="relative aspect-video md:aspect-[4/3] rounded-xl overflow-hidden border border-white/10 shadow-xl"
           >
             <img 
-              src={typeof intimateImg === 'string' ? intimateImg : (intimateImg as unknown as string)}
+              src={intimateImg}
               alt="Intimate Family Gathering" 
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
             />
@@ -138,7 +138,7 @@ export default function Events() {
             className="relative aspect-video md:aspect-[4/3] rounded-xl overflow-hidden border border-white/10 shadow-xl"
           >
             <img 
-              src={typeof buffetImg === 'string' ? buffetImg : (buffetImg as unknown as string)}
+              src={buffetImg}
               alt="Lawn Dining and Events" 
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
             />

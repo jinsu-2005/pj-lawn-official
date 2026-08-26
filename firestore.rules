@@ -55,8 +55,8 @@ service cloud.firestore {
           || resource.data.heldUntil < request.time
         );
         
-      // Users cannot delete availability
-      allow delete: if false;
+      // Only admins can delete availability (for unblocking dates)
+      allow delete: if isAdmin();
     }
     
     match /settings/{settingId} {

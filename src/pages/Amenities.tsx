@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { CarFront, Toilet, Droplets, Lightbulb, Users, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
-import amenitiesImg from '@/assets/gallery/6.png?format=webp&w=1920&as=url'
+const amenitiesImg = '/gallery/6.png'
 
 const amenitiesList = [
   {
@@ -69,7 +69,7 @@ export default function Amenities() {
           className="relative aspect-[21/9] rounded-md overflow-hidden"
         >
           <img 
-            src={typeof amenitiesImg === 'string' ? amenitiesImg : (amenitiesImg as unknown as string)}
+            src={amenitiesImg}
             alt="PJ Lawn Amenities" 
             className="w-full h-full object-cover"
           />

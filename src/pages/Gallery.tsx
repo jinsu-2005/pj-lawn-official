@@ -5,14 +5,6 @@ import { X, ChevronLeft, ChevronRight, Sparkles, Maximize2 } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { collection, onSnapshot, query } from 'firebase/firestore'
 
-// Curated default venue photos with webp optimization
-import img1 from '@/assets/gallery/1.png?format=webp&w=1200&as=url'
-import img2 from '@/assets/gallery/2.png?format=webp&w=1200&as=url'
-import img3 from '@/assets/gallery/3.png?format=webp&w=1200&as=url'
-import img4 from '@/assets/gallery/4.png?format=webp&w=1200&as=url'
-import img5 from '@/assets/gallery/5.jpg?format=webp&w=1200&as=url'
-import img6 from '@/assets/gallery/6.png?format=webp&w=1200&as=url'
-
 interface GalleryItem {
   id: string | number
   src: string
@@ -21,12 +13,12 @@ interface GalleryItem {
 }
 
 const defaultGalleryItems: GalleryItem[] = [
-  { id: 'def-3', src: typeof img3 === 'string' ? img3 : (img3 as unknown as string), alt: 'PJ Lawn' },
-  { id: 'def-1', src: typeof img1 === 'string' ? img1 : (img1 as unknown as string), alt: 'PJ Lawn' },
-  { id: 'def-4', src: typeof img4 === 'string' ? img4 : (img4 as unknown as string), alt: 'PJ Lawn' },
-  { id: 'def-2', src: typeof img2 === 'string' ? img2 : (img2 as unknown as string), alt: 'PJ Lawn' },
-  { id: 'def-5', src: typeof img5 === 'string' ? img5 : (img5 as unknown as string), alt: 'PJ Lawn' },
-  { id: 'def-6', src: typeof img6 === 'string' ? img6 : (img6 as unknown as string), alt: 'PJ Lawn' },
+  { id: 'def-3', src: '/gallery/3.png', alt: 'PJ Lawn' },
+  { id: 'def-1', src: '/gallery/1.png', alt: 'PJ Lawn' },
+  { id: 'def-4', src: '/gallery/4.png', alt: 'PJ Lawn' },
+  { id: 'def-2', src: '/gallery/2.png', alt: 'PJ Lawn' },
+  { id: 'def-5', src: '/gallery/5.jpg', alt: 'PJ Lawn' },
+  { id: 'def-6', src: '/gallery/6.png', alt: 'PJ Lawn' },
 ]
 
 export default function Gallery() {

@@ -75,11 +75,6 @@ export default function Footer() {
 
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-cream-400/60">
           <p>&copy; {currentYear} PJ Lawn. All rights reserved.</p>
-          <div className="flex space-x-4 mt-4 md:mt-0">
-            {/* Optional Links for later */}
-            <span className="cursor-not-allowed">Terms & Conditions</span>
-            <span className="cursor-not-allowed">Privacy Policy</span>
-          </div>
         </div>
       </div>
     </footer>

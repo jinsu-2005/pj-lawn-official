@@ -18,10 +18,20 @@ import Booking from './pages/Booking'
 import Dashboard from './pages/Dashboard'
 import Admin from './pages/Admin'
 
+declare global {
+  interface Window {
+    appLenis?: Lenis;
+  }
+}
+
 function ScrollToTop() {
   const { pathname } = useLocation()
   useEffect(() => {
-    window.scrollTo(0, 0)
+    if (window.appLenis) {
+      window.appLenis.scrollTo(0, { immediate: true })
+    } else {
+      window.scrollTo(0, 0)
+    }
   }, [pathname])
   return null
 }
@@ -38,6 +48,8 @@ export default function App() {
       touchMultiplier: 2,
     })
 
+    window.appLenis = lenis
+
     function raf(time: number) {
       lenis.raf(time)
       requestAnimationFrame(raf)
@@ -47,6 +59,7 @@ export default function App() {
 
     return () => {
       lenis.destroy()
+      window.appLenis = undefined
     }
   }, [])
 

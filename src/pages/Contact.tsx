@@ -115,7 +115,7 @@ export default function Contact() {
               </div>
               <h3 className="text-xl font-serif text-cream-100 mb-2">Visit PJ Lawn</h3>
               <p className="text-cream-400 text-sm leading-relaxed mb-6">
-                Paul Vathiyar Compound, Carmel School Road, Ramanputhur, Nagercoil, Tamil Nadu 629002.
+                Paul Vathiyar Compound, Gandhi Nagar, Kurusady, Nagercoil, Tamil Nadu 629004.
               </p>
             </div>
             <Button to="/location" variant="outline" size="lg" className="w-full">
@@ -130,7 +130,7 @@ export default function Contact() {
           <div className="flex items-center gap-2 text-gold-400 font-medium">
             <Clock size={18} /> Venue Operating Hours:
           </div>
-          <div>Daytime Sessions (7:00 AM – 3:00 PM) &amp; Evening Sessions (4:00 PM – 11:00 PM)</div>
+          <div>Evening Sessions (4:00 PM – 11:00 PM)</div>
         </div>
       </section>
 
