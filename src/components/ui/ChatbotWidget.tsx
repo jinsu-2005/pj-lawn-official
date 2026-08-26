@@ -169,6 +169,13 @@ const STARTER_QUESTIONS = [
   'How booking works'
 ]
 
+const PLACEHOLDER_PROMPTS = [
+  'Ask about venue pricing...',
+  'Ask about booking steps...',
+  'Ask for contact & WhatsApp...',
+  'Ask about lawn facilities...'
+]
+
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([
@@ -176,7 +183,9 @@ export function ChatbotWidget() {
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [placeholderIdx, setPlaceholderIdx] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -185,6 +194,15 @@ export function ChatbotWidget() {
   useEffect(() => {
     scrollToBottom()
   }, [messages, isOpen])
+
+  // Rotate input placeholder every 3.5s to invite user typing
+  useEffect(() => {
+    if (!isOpen) return
+    const timer = setInterval(() => {
+      setPlaceholderIdx((prev) => (prev + 1) % PLACEHOLDER_PROMPTS.length)
+    }, 3500)
+    return () => clearInterval(timer)
+  }, [isOpen])
 
   const sendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || isLoading) return
@@ -216,6 +234,25 @@ export function ChatbotWidget() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Simulates client typing into the input box when a chip is clicked
+  const handleChipClick = (question: string) => {
+    if (isLoading) return
+    setInput('')
+    inputRef.current?.focus()
+
+    let currentIdx = 0
+    const interval = setInterval(() => {
+      currentIdx++
+      setInput(question.slice(0, currentIdx))
+      if (currentIdx >= question.length) {
+        clearInterval(interval)
+        setTimeout(() => {
+          sendMessage(question)
+        }, 160)
+      }
+    }, 20)
   }
 
   const handleSend = (e?: React.FormEvent) => {
@@ -295,43 +332,45 @@ export function ChatbotWidget() {
                 </div>
               )}
 
-              {/* Predefined Starter Questions (Non-scrollable 2x2 grid) */}
-              {messages.length === 1 && !isLoading && (
-                <div className="pt-2">
-                  <p className="text-[11px] text-cream-400 mb-2 font-medium px-1">Common Questions:</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {STARTER_QUESTIONS.map((question, qIdx) => (
-                      <button
-                        key={qIdx}
-                        type="button"
-                        onClick={() => sendMessage(question)}
-                        className="p-2.5 rounded-xl bg-charcoal-800 border border-white/10 hover:border-gold-500/50 hover:bg-gold-500/10 text-cream-200 hover:text-gold-400 text-xs font-medium text-left transition-all duration-200 shadow-sm leading-tight active:scale-95"
-                      >
-                        {question}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Predefined Starter Questions (Docked at bottom above input bar) */}
+            {messages.length === 1 && !isLoading && (
+              <div className="px-3 py-2.5 bg-charcoal-800/80 border-t border-white/5 backdrop-blur">
+                <p className="text-[10px] uppercase tracking-wider text-gold-400 font-semibold mb-1.5 px-0.5">Quick Suggestions</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {STARTER_QUESTIONS.map((question, qIdx) => (
+                    <button
+                      key={qIdx}
+                      type="button"
+                      onClick={() => handleChipClick(question)}
+                      className="px-2.5 py-1.5 rounded-lg bg-charcoal-900/90 border border-white/10 hover:border-gold-500/50 hover:bg-gold-500/15 text-cream-200 hover:text-gold-300 text-xs font-medium text-left transition-all duration-150 shadow-sm leading-tight active:scale-95 truncate"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Input Area */}
-            <form onSubmit={handleSend} className="p-4 bg-charcoal-800 border-t border-white/10 flex gap-2">
+            <form onSubmit={handleSend} className="p-3 bg-charcoal-800 border-t border-white/10 flex gap-2">
               <input
+                ref={inputRef}
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask something..."
-                className="flex-1 bg-charcoal-900 border border-white/10 rounded-full px-4 py-2 text-sm text-cream-50 focus:outline-none focus:border-gold-500"
+                placeholder={PLACEHOLDER_PROMPTS[placeholderIdx]}
+                className="flex-1 bg-charcoal-900 border border-white/10 rounded-full px-4 py-2 text-sm text-cream-50 placeholder:text-cream-400/60 focus:outline-none focus:border-gold-500 transition-colors"
               />
               <button 
                 type="submit" 
                 disabled={!input.trim() || isLoading}
                 className="w-10 h-10 rounded-full bg-gold-500 text-charcoal-900 flex items-center justify-center flex-shrink-0 hover:bg-gold-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Send message"
               >
-                <Send size={16} className="ml-1" />
+                <Send size={16} className="ml-0.5" />
               </button>
             </form>
           </motion.div>
