@@ -13,12 +13,12 @@ interface GalleryItem {
 }
 
 const defaultGalleryItems: GalleryItem[] = [
-  { id: 'def-3', src: '/gallery/3.png', alt: 'PJ Lawn' },
-  { id: 'def-1', src: '/gallery/1.png', alt: 'PJ Lawn' },
-  { id: 'def-4', src: '/gallery/4.png', alt: 'PJ Lawn' },
-  { id: 'def-2', src: '/gallery/2.png', alt: 'PJ Lawn' },
-  { id: 'def-5', src: '/gallery/5.jpg', alt: 'PJ Lawn' },
-  { id: 'def-6', src: '/gallery/6.png', alt: 'PJ Lawn' },
+  { id: 'def-3', src: '/gallery/3.webp', alt: 'PJ Lawn' },
+  { id: 'def-1', src: '/gallery/1.webp', alt: 'PJ Lawn' },
+  { id: 'def-4', src: '/gallery/4.webp', alt: 'PJ Lawn' },
+  { id: 'def-2', src: '/gallery/2.webp', alt: 'PJ Lawn' },
+  { id: 'def-5', src: '/gallery/5.webp', alt: 'PJ Lawn' },
+  { id: 'def-6', src: '/gallery/6.webp', alt: 'PJ Lawn' },
 ]
 
 export default function Gallery() {

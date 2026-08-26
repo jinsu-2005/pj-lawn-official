@@ -202,11 +202,15 @@ export default function SparklesCanvas() {
       ctx.save()
       ctx.translate(x, y)
       ctx.rotate(p.rotation)
-      ctx.fillStyle = `${p.color}${alpha})`
-      ctx.shadowBlur = p.glow
-      ctx.shadowColor = `${p.color}1)`
+
+      // Draw ambient outer glow backing (translucent, scales with alpha)
+      ctx.fillStyle = `${p.color}${alpha * 0.18})`
+      ctx.beginPath()
+      ctx.arc(0, 0, radius * 2.4, 0, Math.PI * 2)
+      ctx.fill()
 
       // Center bright diamond core
+      ctx.fillStyle = `${p.color}${alpha})`
       ctx.beginPath()
       ctx.arc(0, 0, radius * 0.4, 0, Math.PI * 2)
       ctx.fill()

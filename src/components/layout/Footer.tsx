@@ -75,6 +75,11 @@ export default function Footer() {
 
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-cream-400/60">
           <p>&copy; {currentYear} PJ Lawn. All rights reserved.</p>
+          <div className="flex space-x-6 mt-4 md:mt-0 font-medium">
+            <Link to="/terms" className="hover:text-gold-400 transition-colors">Terms & Conditions</Link>
+            <Link to="/privacy" className="hover:text-gold-400 transition-colors">Privacy Policy</Link>
+            <Link to="/refund-policy" className="hover:text-gold-400 transition-colors">Refund Policy</Link>
+          </div>
         </div>
       </div>
     </footer>

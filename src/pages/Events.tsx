@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/Button'
 import { Sparkles, Heart, Utensils, Users } from 'lucide-react'
 
 // Static images for visual sections
-const intimateImg = '/gallery/1.png'
-const layoutImg = '/gallery/2.png'
-const buffetImg = '/gallery/4.png'
+const intimateImg = '/gallery/1.webp'
+const layoutImg = '/gallery/2.webp'
+const buffetImg = '/gallery/4.webp'
 
 const eventCategories = [
   {

@@ -18,6 +18,10 @@ import Booking from './pages/Booking'
 import Dashboard from './pages/Dashboard'
 import Admin from './pages/Admin'
 
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
+import RefundPolicy from './pages/RefundPolicy'
+
 declare global {
   interface Window {
     appLenis?: Lenis;
@@ -78,6 +82,9 @@ export default function App() {
           <Route path="book" element={<Booking />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="admin" element={<Admin />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="refund-policy" element={<RefundPolicy />} />
         </Route>
       </Routes>
     </BrowserRouter>

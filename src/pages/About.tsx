@@ -4,8 +4,8 @@ import { Phone } from 'lucide-react'
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
 
 // Static Images
-const entranceImg = '/gallery/5.jpg'
-const familyImg = '/gallery/1.png'
+const entranceImg = '/gallery/5.webp'
+const familyImg = '/gallery/1.webp'
 
 const fadeUp: any = {
   hidden: { opacity: 0, y: 30 },

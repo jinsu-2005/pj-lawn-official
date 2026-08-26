@@ -6,10 +6,10 @@ import { getPricingTiers } from '@/lib/bookingService'
 
 // Import images with imagetools query (they'll be optimized at build)
 // Static paths for optimized public assets
-const heroImg = '/gallery/3.png'
-const aboutImg = '/gallery/2.png'
-const buffetImg = '/gallery/4.png'
-const amenitiesImg = '/gallery/6.png'
+const heroImg = '/gallery/3.webp'
+const aboutImg = '/gallery/2.webp'
+const buffetImg = '/gallery/4.webp'
+const amenitiesImg = '/gallery/6.webp'
 
 import { Variants } from 'framer-motion'
 

@@ -291,40 +291,116 @@ export default function Booking() {
 
                   <h2 className="text-xl font-serif text-cream-100 mb-6">When is your event?</h2>
                   
-                  <div className="bg-charcoal-900 border border-white/10 rounded-md mb-8 flex flex-col items-center justify-center py-8">
+                  <div className="bg-charcoal-900 border border-white/5 rounded-2xl mb-8 flex flex-col items-center justify-center py-10 shadow-2xl">
                     <style>{`
                       .rdp {
-                        --rdp-cell-size: 40px;
+                        --rdp-cell-size: 44px;
                         --rdp-accent-color: #D4AF37; /* gold-500 */
                         --rdp-background-color: rgba(212, 175, 55, 0.1);
-                        --rdp-accent-color-dark: #F3E5AB; /* cream-100 */
-                        --rdp-background-color-dark: rgba(212, 175, 55, 0.2);
                         color: #E2DFD2;
                         margin: 0;
                       }
-                      /* Available Dates (Green Outline) */
+                      /* Month name caption styling */
+                      .rdp-caption_label {
+                        font-family: Georgia, serif;
+                        font-size: 1.25rem;
+                        color: #FFF8DC !important; /* warm starlight */
+                        font-weight: bold;
+                        letter-spacing: 0.05em;
+                      }
+                      /* Navigation Buttons */
+                      .rdp-nav_button {
+                        color: #d4af37 !important;
+                        background: rgba(255, 255, 255, 0.03) !important;
+                        border: 1px solid rgba(212, 175, 55, 0.2) !important;
+                        border-radius: 9999px !important;
+                        width: 34px !important;
+                        height: 34px !important;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 0.2s;
+                        cursor: pointer;
+                      }
+                      .rdp-nav_button:hover {
+                        background: rgba(212, 175, 55, 0.15) !important;
+                        border-color: #d4af37 !important;
+                        color: #fff !important;
+                      }
+                      /* Weekday labels */
+                      .rdp-head_cell {
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        letter-spacing: 0.1em;
+                        color: #d4af37;
+                        padding-bottom: 12px;
+                      }
+                      /* Day Cells styling */
                       .rdp-day {
-                        border: 1px solid rgba(34, 197, 94, 0.4);
-                        border-radius: 4px;
+                        font-weight: 500;
+                        border-radius: 9999px !important; /* Circular cells */
+                        width: 42px;
+                        height: 42px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 1px;
+                        transition: all 0.2s;
+                        position: relative;
+                        border: 1px solid transparent;
+                        color: #ede5d0;
                       }
-                      /* Hover effect for available dates */
-                      .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
-                        background-color: rgba(34, 197, 94, 0.15);
+                      /* Available Dates: soft green tint border and tiny under-dot */
+                      .rdp-day:not([disabled]):not(.rdp-day_selected):not(.rdp-day_outside) {
+                        background: rgba(255, 255, 255, 0.02);
+                        border-color: rgba(34, 197, 94, 0.2);
                       }
-                      /* Selected Date (Solid Gold) */
+                      .rdp-day:not([disabled]):not(.rdp-day_selected):not(.rdp-day_outside):hover {
+                        background: rgba(34, 197, 94, 0.15) !important;
+                        border-color: rgba(34, 197, 94, 0.6) !important;
+                        color: #fff;
+                        transform: scale(1.05);
+                      }
+                      /* Available under-dot */
+                      .rdp-day:not([disabled]):not(.rdp-day_selected):not(.rdp-day_outside)::after {
+                        content: '';
+                        position: absolute;
+                        bottom: 4px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        width: 4px;
+                        height: 4px;
+                        border-radius: 50%;
+                        background-color: #22c55e;
+                      }
+                      /* Selected Date - Solid gold-500 circle */
                       .rdp-day_selected, .rdp-day_selected:focus-visible, .rdp-day_selected:hover {
-                        color: #1A1A1A;
+                        color: #0c0c0c !important;
                         background-color: #D4AF37 !important;
                         border-color: #D4AF37 !important;
+                        font-weight: 800 !important;
+                        box-shadow: 0 4px 14px rgba(212, 175, 55, 0.4);
+                        transform: scale(1.05);
                       }
-                      /* Unavailable/Disabled Dates (Red + Strikethrough) */
+                      .rdp-day_selected::after {
+                        display: none !important; /* Hide dot on selected date */
+                      }
+                      /* Unavailable/Disabled Dates: opacity fade for cleanliness */
                       .rdp-day_disabled {
-                        opacity: 1;
-                        background-color: rgba(239, 68, 68, 0.1) !important;
-                        color: #ef4444 !important;
-                        border: 1px solid rgba(239, 68, 68, 0.3) !important;
-                        text-decoration: line-through;
+                        opacity: 0.18;
+                        color: #777777 !important;
                         cursor: not-allowed;
+                        background: transparent !important;
+                        border: 1px solid transparent !important;
+                        text-decoration: none !important;
+                      }
+                      .rdp-day_disabled::after {
+                        display: none !important;
+                      }
+                      /* Outside month days */
+                      .rdp-day_outside {
+                        opacity: 0.25;
                       }
                     `}</style>
                     <DayPicker 
@@ -335,17 +411,17 @@ export default function Booking() {
                       className="p-4"
                     />
                     
-                    <div className="flex gap-4 mt-2 pt-6 border-t border-white/5 w-full max-w-[280px] justify-center text-xs text-cream-400">
+                    <div className="flex gap-6 mt-4 pt-6 border-t border-white/5 w-full max-w-[320px] justify-center text-xs text-cream-400">
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm border border-green-500/40"></div>
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
                         <span>Available</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-gold-500"></div>
+                        <div className="w-2 h-2 rounded-full bg-gold-500"></div>
                         <span className="text-cream-200">Selected</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-red-500/10 border border-red-500/30"></div>
+                        <div className="w-2 h-2 rounded-full bg-cream-400/20"></div>
                         <span>Unavailable</span>
                       </div>
                     </div>
@@ -482,8 +558,21 @@ export default function Booking() {
                     </div>
                   </div>
 
+                  <div className="mt-8 mb-8 p-6 bg-gold-500/5 border border-gold-500/20 rounded-xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
+                    <div>
+                      <h4 className="text-gold-400 font-serif text-lg font-bold mb-1">Want Instant Review?</h4>
+                      <p className="text-cream-300 text-sm">Call us immediately to bypass the 2-hour review wait and lock in your date right away.</p>
+                    </div>
+                    <a 
+                      href="tel:+919489724975" 
+                      className="inline-flex items-center gap-2 px-6 py-3.5 bg-gold-400 hover:bg-gold-300 text-charcoal-950 text-sm font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-gold-500/10 active:scale-95 transition-all shrink-0"
+                    >
+                      📞 Call +91 94897 24975
+                    </a>
+                  </div>
+
                   <div className="text-center">
-                    <Button to="/dashboard">Go to Dashboard to Track Status</Button>
+                    <Button to="/dashboard" className="w-full sm:w-auto">Go to Dashboard to Track Status</Button>
                   </div>
                 </motion.div>
               )}

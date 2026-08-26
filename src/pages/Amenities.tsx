@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { CarFront, Toilet, Droplets, Lightbulb, Users, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
-const amenitiesImg = '/gallery/6.png'
+const amenitiesImg = '/gallery/6.webp'
 
 const amenitiesList = [
   {
