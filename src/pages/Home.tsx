@@ -10,6 +10,8 @@ import aboutImg from '@/assets/gallery/2.png?format=webp&w=800&as=url'
 import buffetImg from '@/assets/gallery/4.png?format=webp&w=1920&as=url'
 import amenitiesImg from '@/assets/gallery/6.png?format=webp&w=1920&as=url'
 
+import { Variants } from 'framer-motion'
+
 const occasions = [
   'Birthday Parties', 'Anniversary Celebrations', 'Wedding Functions', 
   'Wedding Receptions', 'Engagement Functions', 'Family Functions', 
@@ -18,7 +20,7 @@ const occasions = [
   'Community Gatherings', 'Small Functions', 'Special Occasions'
 ]
 
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -29,24 +31,24 @@ const staggerContainer = {
   }
 }
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.25, 1, 0.5, 1] } }
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.25, 1, 0.5, 1] as any } }
 }
 
-const fadeLeft = {
+const fadeLeft: Variants = {
   hidden: { opacity: 0, x: -40 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.25, 1, 0.5, 1] } }
+  visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.25, 1, 0.5, 1] as any } }
 }
 
-const fadeRight = {
+const fadeRight: Variants = {
   hidden: { opacity: 0, x: 40 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.25, 1, 0.5, 1] } }
+  visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.25, 1, 0.5, 1] as any } }
 }
 
-const imageScale = {
+const imageScale: Variants = {
   hidden: { opacity: 0, scale: 0.95, filter: 'blur(5px)' },
-  visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 1.2, ease: [0.25, 1, 0.5, 1] } }
+  visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 1.2, ease: [0.25, 1, 0.5, 1] as any } }
 }
 
 export default function Home() {

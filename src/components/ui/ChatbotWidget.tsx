@@ -2,6 +2,42 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageSquare, X, Send, Bot, User } from 'lucide-react'
 
+function renderMessageText(content: string) {
+  const lines = content.split('\n')
+  return (
+    <div className="space-y-1.5 leading-relaxed">
+      {lines.map((line, lineIdx) => {
+        if (!line.trim()) {
+          return <div key={lineIdx} className="h-1.5" />
+        }
+        
+        const parts = line.split(/(\*\*.*?\*\*|\*.*?\*)/g)
+        return (
+          <p key={lineIdx}>
+            {parts.map((part, partIdx) => {
+              if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+                return (
+                  <strong key={partIdx} className="font-semibold text-gold-400">
+                    {part.slice(2, -2)}
+                  </strong>
+                )
+              }
+              if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
+                return (
+                  <em key={partIdx} className="italic text-cream-200">
+                    {part.slice(1, -1)}
+                  </em>
+                )
+              }
+              return part
+            })}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([
@@ -103,7 +139,7 @@ export function ChatbotWidget() {
                       {msg.role === 'user' ? <User size={12} /> : <Bot size={12} />}
                     </div>
                     <div className={`p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-white/10 text-cream-50 rounded-tr-none' : 'bg-charcoal-800 text-cream-100 rounded-tl-none border border-white/5'}`}>
-                      {msg.content}
+                      {renderMessageText(msg.content)}
                     </div>
                   </div>
                 </div>

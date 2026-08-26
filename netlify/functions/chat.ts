@@ -68,7 +68,7 @@ export const handler: Handler = async (event, context) => {
     // Initialize cache if it doesn't exist
     if (!global.promptCache) {
       global.promptCache = {
-        systemInstruction: "You are a helpful assistant for PJ Lawn.",
+        systemInstruction: "You are the official PJ Lawn virtual assistant. Keep your responses warm, concise, and helpful. Use clean, natural formatting without excessive asterisks.",
         lastFetched: 0
       };
     }
@@ -108,11 +108,14 @@ export const handler: Handler = async (event, context) => {
     });
 
     const fallbackModels = [
-      'gemini-2.5-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.1-flash-lite',
+      'gemini-3.7-flash',
+      'gemini-3.6-flash',
       'gemini-3.5-flash',
-      'gemini-3.0-flash',
-      'gemini-2.5-flash-lite',
-      'gemini-1.5-flash'
+      'gemini-3-flash',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite'
     ];
 
     let response;
