@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
-import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Sparkles, Maximize2 } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { collection, onSnapshot, query } from 'firebase/firestore'
 
@@ -17,24 +17,20 @@ interface GalleryItem {
   id: string | number
   src: string
   alt: string
-  category?: string
   isDynamic?: boolean
 }
 
 const defaultGalleryItems: GalleryItem[] = [
-  { id: 'def-3', src: typeof img3 === 'string' ? img3 : (img3 as unknown as string), alt: 'PJ Lawn Venue at Night', category: 'Venue Ambience' },
-  { id: 'def-1', src: typeof img1 === 'string' ? img1 : (img1 as unknown as string), alt: 'Stage & Lawn Entrance Setup', category: 'Stage & Lawn' },
-  { id: 'def-4', src: typeof img4 === 'string' ? img4 : (img4 as unknown as string), alt: 'Exquisite Buffet Dining Area', category: 'Dining & Buffet' },
-  { id: 'def-2', src: typeof img2 === 'string' ? img2 : (img2 as unknown as string), alt: 'Seating Arrangement & Brand Wall', category: 'Venue Ambience' },
-  { id: 'def-5', src: typeof img5 === 'string' ? img5 : (img5 as unknown as string), alt: 'Evening Event Illumination', category: 'Stage & Lawn' },
-  { id: 'def-6', src: typeof img6 === 'string' ? img6 : (img6 as unknown as string), alt: 'Hygienic Handwash & Facilities', category: 'Facilities' },
+  { id: 'def-3', src: typeof img3 === 'string' ? img3 : (img3 as unknown as string), alt: 'PJ Lawn' },
+  { id: 'def-1', src: typeof img1 === 'string' ? img1 : (img1 as unknown as string), alt: 'PJ Lawn' },
+  { id: 'def-4', src: typeof img4 === 'string' ? img4 : (img4 as unknown as string), alt: 'PJ Lawn' },
+  { id: 'def-2', src: typeof img2 === 'string' ? img2 : (img2 as unknown as string), alt: 'PJ Lawn' },
+  { id: 'def-5', src: typeof img5 === 'string' ? img5 : (img5 as unknown as string), alt: 'PJ Lawn' },
+  { id: 'def-6', src: typeof img6 === 'string' ? img6 : (img6 as unknown as string), alt: 'PJ Lawn' },
 ]
-
-const categories = ['All', 'Venue Ambience', 'Stage & Lawn', 'Dining & Buffet', 'Facilities']
 
 export default function Gallery() {
   const [firestoreItems, setFirestoreItems] = useState<GalleryItem[]>([])
-  const [selectedCategory, setSelectedCategory] = useState('All')
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   
@@ -52,8 +48,7 @@ export default function Gallery() {
             items.push({
               id: doc.id,
               src: data.url,
-              alt: data.alt || data.fileName || 'PJ Lawn Event Photo',
-              category: data.category || 'Venue Ambience',
+              alt: 'PJ Lawn',
               isDynamic: true
             })
           }
@@ -72,12 +67,6 @@ export default function Gallery() {
   const allGalleryItems = useMemo(() => {
     return [...firestoreItems, ...defaultGalleryItems]
   }, [firestoreItems])
-
-  // Filter items by category
-  const filteredItems = useMemo(() => {
-    if (selectedCategory === 'All') return allGalleryItems
-    return allGalleryItems.filter(item => item.category === selectedCategory)
-  }, [allGalleryItems, selectedCategory])
 
   const openLightbox = (index: number) => {
     setSelectedIndex(index)
@@ -143,60 +132,35 @@ export default function Gallery() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-cream-300 text-sm md:text-base max-w-xl mx-auto"
         >
-          Explore the lush green lawns, magical open-air night ambiance, and luxury event setups at PJ Lawn.
+          A glimpse into the open-air lawn atmosphere, evening illumination, and event setups at PJ Lawn.
         </motion.p>
       </section>
 
-      {/* Category Filter Pills */}
-      <section className="container mx-auto px-4 mb-10">
-        <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl mx-auto">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-full text-xs font-medium uppercase tracking-wider transition-all duration-300 ${
-                selectedCategory === cat
-                  ? 'bg-gold-500 text-charcoal-900 shadow-lg shadow-gold-500/20 font-bold'
-                  : 'bg-charcoal-800 text-cream-300 hover:bg-charcoal-700 hover:text-gold-400 border border-white/5'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Responsive Gallery Grid */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Clean Responsive Gallery Grid */}
+      <section className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredItems.map((item, index) => (
+          {allGalleryItems.map((item, index) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
-              className="relative aspect-[4/3] rounded-xl overflow-hidden group cursor-pointer border border-white/5 bg-charcoal-800 shadow-lg"
+              className="relative aspect-[4/3] rounded-2xl overflow-hidden group cursor-pointer border border-white/5 bg-charcoal-800 shadow-xl"
               onClick={() => openLightbox(index)}
             >
               <img 
                 src={item.src} 
-                alt={item.alt}
+                alt="PJ Lawn Venue Photo"
                 loading="lazy"
                 decoding="async"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-108"
               />
               
-              {/* Hover overlay with title & scrim */}
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/90 via-charcoal-950/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-                <span className="text-gold-400 text-xs font-semibold uppercase tracking-wider mb-1">
-                  {item.category || 'PJ Lawn'}
-                </span>
-                <span className="text-cream-50 text-sm font-medium">
-                  {item.alt}
-                </span>
-                <span className="text-white/60 text-xs mt-2 uppercase tracking-widest flex items-center gap-1 font-semibold">
-                  Click to Expand &rarr;
-                </span>
+              {/* Subtle hover scrim with expand icon */}
+              <div className="absolute inset-0 bg-charcoal-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-charcoal-900/80 border border-gold-500/40 text-gold-400 flex items-center justify-center shadow-2xl scale-75 group-hover:scale-100 transition-transform duration-300">
+                  <Maximize2 size={20} />
+                </div>
               </div>
             </motion.div>
           ))}
@@ -232,39 +196,36 @@ export default function Gallery() {
             >
               <div className="overflow-hidden" ref={emblaRef}>
                 <div className="flex touch-pan-y">
-                  {filteredItems.map((item) => (
+                  {allGalleryItems.map((item) => (
                     <div key={item.id} className="flex-[0_0_100%] min-w-0 flex flex-col items-center justify-center h-[75vh] md:h-[80vh] px-2">
                       <img 
-                        src={item.src}
-                        alt={item.alt}
+                        src={item.src} 
+                        alt="PJ Lawn Venue Photo"
                         loading="lazy"
                         decoding="async"
-                        className="max-w-full max-h-[85%] object-contain drop-shadow-2xl rounded-lg"
+                        className="max-w-full max-h-[90%] object-contain drop-shadow-2xl rounded-xl"
                       />
-                      <p className="text-cream-200 text-sm mt-4 font-medium text-center bg-charcoal-900/60 px-4 py-1.5 rounded-full border border-white/5">
-                        {item.alt}
-                      </p>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Navigation Arrows */}
-              {filteredItems.length > 1 && (
+              {allGalleryItems.length > 1 && (
                 <>
                   <button 
                     onClick={scrollPrev}
-                    className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-charcoal-900/80 border border-white/10 text-cream-200 hover:text-gold-400 hover:bg-charcoal-800 transition-all"
+                    className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-charcoal-900/80 border border-white/10 text-cream-200 hover:text-gold-400 hover:bg-charcoal-800 transition-all shadow-xl"
                     aria-label="Previous image"
                   >
-                    <ChevronLeft size={32} />
+                    <ChevronLeft size={30} />
                   </button>
                   <button 
                     onClick={scrollNext}
-                    className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-charcoal-900/80 border border-white/10 text-cream-200 hover:text-gold-400 hover:bg-charcoal-800 transition-all"
+                    className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-charcoal-900/80 border border-white/10 text-cream-200 hover:text-gold-400 hover:bg-charcoal-800 transition-all shadow-xl"
                     aria-label="Next image"
                   >
-                    <ChevronRight size={32} />
+                    <ChevronRight size={30} />
                   </button>
                 </>
               )}
