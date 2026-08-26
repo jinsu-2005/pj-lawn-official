@@ -5,10 +5,20 @@ import { GoogleGenAI } from '@google/genai';
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
   try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
+    let serviceAccount: any = null;
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (raw) {
+      try {
+        serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
+      } catch {
+        serviceAccount = JSON.parse(raw);
+      }
+    }
+    if (serviceAccount) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+      });
+    }
   } catch (error) {
     console.error('Firebase Admin initialization error:', error);
   }

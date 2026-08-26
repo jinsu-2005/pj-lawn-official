@@ -3,12 +3,26 @@ import { Cashfree, CFEnvironment } from "cashfree-pg";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-// Initialize Firebase Admin (reuse existing logic if possible, or initialize here)
+// Initialize Firebase Admin
 if (getApps().length === 0) {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || "{}");
-  initializeApp({
-    credential: cert(serviceAccount),
-  });
+  try {
+    let serviceAccount: any = null;
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (raw) {
+      try {
+        serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
+      } catch {
+        serviceAccount = JSON.parse(raw);
+      }
+    }
+    if (serviceAccount) {
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+    }
+  } catch (err) {
+    console.error("Firebase admin init error:", err);
+  }
 }
 const db = getFirestore();
 
