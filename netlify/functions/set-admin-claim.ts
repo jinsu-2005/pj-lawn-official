@@ -7,20 +7,35 @@ let initialized = false;
 
 function initFirebase() {
   if (!initialized && getApps().length === 0) {
-    // In production, use environment variables. 
-    // Here we need FIREBASE_SERVICE_ACCOUNT base64 encoded or individual vars
-    const serviceAccountStr = process.env.FIREBASE_SERVICE_ACCOUNT;
-    
-    if (serviceAccountStr) {
-      try {
-        const serviceAccount = JSON.parse(Buffer.from(serviceAccountStr, 'base64').toString('utf8'));
+    try {
+      let serviceAccount: any = null;
+      const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
+      
+      if (FIREBASE_PRIVATE_KEY) {
+        serviceAccount = {
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: Buffer.from(FIREBASE_PRIVATE_KEY, 'base64').toString('utf8'),
+        };
+      } else {
+        const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+        if (raw) {
+          try {
+            serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
+          } catch {
+            serviceAccount = JSON.parse(raw);
+          }
+        }
+      }
+      
+      if (serviceAccount) {
         initializeApp({
           credential: cert(serviceAccount)
         });
         initialized = true;
-      } catch (e) {
-        console.error("Failed to parse service account", e);
       }
+    } catch (e) {
+      console.error("Failed to init firebase admin", e);
     }
   }
 }

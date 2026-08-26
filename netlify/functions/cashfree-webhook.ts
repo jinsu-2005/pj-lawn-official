@@ -6,15 +6,25 @@ import { getFirestore } from "firebase-admin/firestore";
 // Initialize Firebase Admin
 if (getApps().length === 0) {
   try {
-    let serviceAccount: any = null;
-    const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (raw) {
-      try {
-        serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-      } catch {
-        serviceAccount = JSON.parse(raw);
+        let serviceAccount: any = null;
+    const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
+    if (FIREBASE_PRIVATE_KEY) {
+      serviceAccount = {
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: Buffer.from(FIREBASE_PRIVATE_KEY, 'base64').toString('utf8'),
+      };
+    } else {
+      const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      if (raw) {
+        try {
+          serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
+        } catch {
+          serviceAccount = JSON.parse(raw);
+        }
       }
     }
+    
     if (serviceAccount) {
       initializeApp({
         credential: cert(serviceAccount),
