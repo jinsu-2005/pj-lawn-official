@@ -7,9 +7,9 @@ function parseInlineFormatting(text: string): React.ReactNode[] {
   // 1. Markdown links: [Title](url)
   // 2. Bold text: **text**
   // 3. URLs (http/https)
-  // 4. WhatsApp links (wa.me)
-  // 5. Phone numbers (+91 94897 24975, 09489724975, 9489724975, etc.)
-  const regex = /(\[.*?\]\(https?:\/\/[^\s)]+\)|\*\*.*?\*\*|https?:\/\/[^\s<]+|wa\.me\/[^\s<]+|(?:\+91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}|0[6-9]\d{9})/g;
+  // 4. WhatsApp links (wa.me) or WhatsApp + number phrase
+  // 5. Phone numbers (+91 94897 24975, 094897 24975, 9489724975, etc.)
+  const regex = /(\[.*?\]\(https?:\/\/[^\s)]+\)|\*\*.*?\*\*|https?:\/\/[^\s<]+|wa\.me\/[^\s<]+|(?:WhatsApp(?:\s+at|\s*:)?\s*(?:\+91[\s-]?)?0?[6-9]\d{4}[\s-]?\d{5})|(?:\+91[\s-]?)?0?[6-9]\d{4}[\s-]?\d{5})/gi;
   const parts = text.split(regex);
 
   return parts.map((part, idx) => {
@@ -41,8 +41,25 @@ function parseInlineFormatting(text: string): React.ReactNode[] {
       );
     }
 
-    // 3. URLs
-    if (/^https?:\/\/[^\s<]+$/.test(part)) {
+    // 3. WhatsApp mentions with number (e.g., "WhatsApp at +91 94897 24975" or "WhatsApp: 9489724975")
+    if (/^WhatsApp/i.test(part.trim())) {
+      const digits = part.replace(/\D/g, '');
+      const waNumber = digits.length === 10 ? `91${digits}` : digits.startsWith('0') ? `91${digits.slice(1)}` : digits;
+      return (
+        <a
+          key={idx}
+          href={`https://wa.me/${waNumber}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 my-0.5 rounded-full bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 hover:text-emerald-300 font-medium text-xs transition-all shadow-sm"
+        >
+          💬 {part.trim()}
+        </a>
+      );
+    }
+
+    // 4. URLs
+    if (/^https?:\/\/[^\s<]+$/i.test(part)) {
       const isWhatsApp = part.includes('wa.me') || part.includes('whatsapp.com');
       return (
         <a
@@ -61,8 +78,8 @@ function parseInlineFormatting(text: string): React.ReactNode[] {
       );
     }
 
-    // 4. wa.me link without protocol
-    if (/^wa\.me\/[^\s<]+$/.test(part)) {
+    // 5. wa.me link without protocol
+    if (/^wa\.me\/[^\s<]+$/i.test(part)) {
       return (
         <a
           key={idx}
@@ -76,9 +93,9 @@ function parseInlineFormatting(text: string): React.ReactNode[] {
       );
     }
 
-    // 5. Phone number
+    // 6. Phone number (handles +91, leading 0, and spaces)
     const trimmedPart = part.trim();
-    if (/^((?:\+91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}|0[6-9]\d{9})$/.test(trimmedPart)) {
+    if (/^(?:\+91[\s-]?)?0?[6-9]\d{4}[\s-]?\d{5}$/.test(trimmedPart)) {
       const cleanDigits = trimmedPart.replace(/\D/g, '');
       const phoneDigits = cleanDigits.length === 10 ? `+91${cleanDigits}` : cleanDigits.startsWith('91') ? `+${cleanDigits}` : cleanDigits.startsWith('0') ? `+91${cleanDigits.slice(1)}` : `+${cleanDigits}`;
       return (
