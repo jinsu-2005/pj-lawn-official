@@ -41,7 +41,7 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="text-lg font-serif text-cream-200 mb-4">Visit Us</h4>
+            <h4 className="text-lg font-serif text-cream-200 mb-4">Address and Contact</h4>
             <ul className="space-y-4">
               <li className="flex items-start space-x-3">
                 <MapPin className="text-gold-400 shrink-0 mt-0.5" size={18} />

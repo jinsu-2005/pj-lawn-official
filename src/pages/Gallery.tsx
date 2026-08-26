@@ -192,7 +192,6 @@ export default function Gallery() {
             {/* Carousel Container */}
             <div 
               className="relative w-full max-w-6xl mx-auto px-2 md:px-12 cursor-default"
-              onClick={(e) => e.stopPropagation()}
             >
               <div className="overflow-hidden" ref={emblaRef}>
                 <div className="flex touch-pan-y">
@@ -203,6 +202,7 @@ export default function Gallery() {
                         alt="PJ Lawn Venue Photo"
                         loading="lazy"
                         decoding="async"
+                        onClick={(e) => e.stopPropagation()}
                         className="max-w-full max-h-[90%] object-contain drop-shadow-2xl rounded-xl"
                       />
                     </div>
@@ -214,14 +214,20 @@ export default function Gallery() {
               {allGalleryItems.length > 1 && (
                 <>
                   <button 
-                    onClick={scrollPrev}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      scrollPrev();
+                    }}
                     className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-charcoal-900/80 border border-white/10 text-cream-200 hover:text-gold-400 hover:bg-charcoal-800 transition-all shadow-xl"
                     aria-label="Previous image"
                   >
                     <ChevronLeft size={30} />
                   </button>
                   <button 
-                    onClick={scrollNext}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      scrollNext();
+                    }}
                     className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-charcoal-900/80 border border-white/10 text-cream-200 hover:text-gold-400 hover:bg-charcoal-800 transition-all shadow-xl"
                     aria-label="Next image"
                   >

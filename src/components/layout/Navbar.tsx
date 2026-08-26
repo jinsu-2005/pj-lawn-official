@@ -63,11 +63,23 @@ export default function Navbar() {
     setIsMobileMenuOpen(false)
   }, [location.pathname])
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isMobileMenuOpen])
+
   return (
     <header
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        isScrolled
+        isScrolled || isMobileMenuOpen
           ? 'bg-charcoal-900/95 md:bg-charcoal-900/80 backdrop-blur-md border-b border-white/5 py-3 md:py-2.5'
           : 'bg-transparent md:bg-charcoal-900/80 md:backdrop-blur-md md:border-b md:border-white/5 py-5 md:py-3'
       )}
