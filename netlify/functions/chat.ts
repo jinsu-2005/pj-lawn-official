@@ -1,9 +1,17 @@
 import { Handler } from '@netlify/functions';
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import { GoogleGenAI } from '@google/genai';
 
+declare global {
+  var promptCache: {
+    systemInstruction: string;
+    lastFetched: number;
+  } | undefined;
+}
+
 // Initialize Firebase Admin if not already initialized
-if (!admin.apps.length) {
+if (getApps().length === 0) {
   try {
         let serviceAccount: any = null;
     const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
@@ -25,8 +33,8 @@ if (!admin.apps.length) {
     }
     
     if (serviceAccount) {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
+      initializeApp({
+        credential: cert(serviceAccount)
       });
     }
   } catch (error) {
@@ -34,7 +42,7 @@ if (!admin.apps.length) {
   }
 }
 
-const db = admin.firestore();
+const db = getFirestore();
 
 // Initialize Gemini API
 const ai = new GoogleGenAI({
@@ -57,14 +65,28 @@ export const handler: Handler = async (event, context) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Message is required' }) };
     }
 
-    // Fetch chatbot settings from Firestore
-    const settingsDoc = await db.collection('settings').doc('chatbot').get();
-    let systemInstruction = "You are a helpful assistant for PJ Lawn.";
-    
-    if (settingsDoc.exists) {
-      const data = settingsDoc.data();
-      systemInstruction = `${data?.systemPrompt || ''}\n\nHere is the business context and facts you must reference:\n${data?.businessData || ''}`;
+    // Initialize cache if it doesn't exist
+    if (!global.promptCache) {
+      global.promptCache = {
+        systemInstruction: "You are a helpful assistant for PJ Lawn.",
+        lastFetched: 0
+      };
     }
+
+    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    const now = Date.now();
+
+    // Fetch from Firestore if cache is expired
+    if (now - global.promptCache.lastFetched > CACHE_TTL) {
+      const settingsDoc = await db.collection('settings').doc('chatbot').get();
+      if (settingsDoc.exists) {
+        const data = settingsDoc.data();
+        global.promptCache.systemInstruction = `${data?.systemPrompt || ''}\n\nHere is the business context and facts you must reference:\n${data?.businessData || ''}`;
+      }
+      global.promptCache.lastFetched = now;
+    }
+
+    const systemInstruction = global.promptCache.systemInstruction;
 
     // Prepare contents
     const contents: any[] = [];
@@ -86,14 +108,11 @@ export const handler: Handler = async (event, context) => {
     });
 
     const fallbackModels = [
-      'gemini-3.7-flash',
-      'gemini-3.6-flash',
-      'gemini-3.5-flash',
-      'gemini-3.5-flash-lite',
-      'gemini-3.1-flash-lite',
-      'gemini-3.0-flash',
       'gemini-2.5-flash',
-      'gemini-2.5-flash-lite'
+      'gemini-3.5-flash',
+      'gemini-3.0-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-1.5-flash'
     ];
 
     let response;

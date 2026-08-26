@@ -37,6 +37,27 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
   }
+
+  /* Custom Scrollbar Styles */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-charcoal-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-charcoal-700 rounded-full border-2 border-solid border-charcoal-900;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-charcoal-600;
+  }
+  
+  /* For Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--secondary) var(--background);
+  }
 }
 
 @layer utilities {
