@@ -42,7 +42,42 @@ if (getApps().length === 0) {
   }
 }
 
-const db = getFirestore();
+// Helper to fetch chatbot settings from Firestore REST API (works reliably in serverless environments)
+async function fetchChatbotSettings(): Promise<string> {
+  const DEFAULT_PROMPT = `You are the official PJ Lawn virtual assistant. Keep your responses warm, concise, and helpful. Use clean, natural formatting without excessive asterisks.`;
+  
+  // 1. Try Firestore REST API
+  try {
+    const projectId = process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'pj-lawn';
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/settings/chatbot`);
+    if (res.ok) {
+      const data = await res.json();
+      const systemPrompt = data?.fields?.systemPrompt?.stringValue || '';
+      const businessData = data?.fields?.businessData?.stringValue || '';
+      if (systemPrompt || businessData) {
+        return `${systemPrompt}\n\nHere is the business context and facts you must reference:\n${businessData}`;
+      }
+    }
+  } catch (err) {
+    console.warn('Firestore REST fetch error:', err);
+  }
+
+  // 2. Fallback to Admin SDK if available
+  try {
+    if (getApps().length > 0) {
+      const db = getFirestore();
+      const settingsDoc = await db.collection('settings').doc('chatbot').get();
+      if (settingsDoc.exists) {
+        const data = settingsDoc.data();
+        return `${data?.systemPrompt || ''}\n\nHere is the business context and facts you must reference:\n${data?.businessData || ''}`;
+      }
+    }
+  } catch (err) {
+    console.warn('Firestore Admin SDK fetch error:', err);
+  }
+
+  return DEFAULT_PROMPT;
+}
 
 // Initialize Gemini API
 const ai = new GoogleGenAI({
@@ -68,21 +103,17 @@ export const handler: Handler = async (event, context) => {
     // Initialize cache if it doesn't exist
     if (!global.promptCache) {
       global.promptCache = {
-        systemInstruction: "You are the official PJ Lawn virtual assistant. Keep your responses warm, concise, and helpful. Use clean, natural formatting without excessive asterisks.",
+        systemInstruction: '',
         lastFetched: 0
       };
     }
 
-    const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    const CACHE_TTL = 30 * 1000; // 30 seconds cache for rapid reflection of admin edits
     const now = Date.now();
 
-    // Fetch from Firestore if cache is expired
-    if (now - global.promptCache.lastFetched > CACHE_TTL) {
-      const settingsDoc = await db.collection('settings').doc('chatbot').get();
-      if (settingsDoc.exists) {
-        const data = settingsDoc.data();
-        global.promptCache.systemInstruction = `${data?.systemPrompt || ''}\n\nHere is the business context and facts you must reference:\n${data?.businessData || ''}`;
-      }
+    // Fetch from Firestore if cache is expired or empty
+    if (now - global.promptCache.lastFetched > CACHE_TTL || !global.promptCache.systemInstruction) {
+      global.promptCache.systemInstruction = await fetchChatbotSettings();
       global.promptCache.lastFetched = now;
     }
 

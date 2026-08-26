@@ -285,34 +285,56 @@ function ChatbotManager({ setNotification }: { setNotification: (n: any) => void
   if (loading) return <div className="text-cream-400">Loading settings...</div>
 
   return (
-    <motion.div initial={{opacity:0}} animate={{opacity:1}} className="max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-serif text-cream-100">Chatbot AI Configuration</h2>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : 'Save Settings'}
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} className="max-w-4xl space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-charcoal-800/80 p-6 rounded-2xl border border-white/5 backdrop-blur">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-gold-400 animate-pulse"></span>
+            <h2 className="text-2xl font-serif text-cream-100">Chatbot AI Configuration</h2>
+          </div>
+          <p className="text-sm text-cream-400">Configure real-time prompt guidelines, venue facts, and contact responses for the AI assistant.</p>
+        </div>
+        <Button onClick={handleSave} disabled={saving} className="shadow-lg shadow-gold-500/10">
+          {saving ? 'Saving Changes...' : 'Save Settings'}
         </Button>
       </div>
 
       <div className="space-y-6">
-        <div className="bg-charcoal-800 p-6 rounded-md border border-white/5">
-          <label className="block text-sm font-medium text-cream-200 mb-2">System Prompt (AI Personality & Rules)</label>
-          <p className="text-xs text-cream-400 mb-4">Define how the AI should behave, its tone, and strict rules it must follow.</p>
+        {/* System Prompt Box */}
+        <div className="bg-charcoal-800/90 p-6 rounded-2xl border border-white/10 shadow-xl space-y-3">
+          <div className="flex justify-between items-center">
+            <div>
+              <label className="block text-sm font-semibold text-gold-400">System Prompt (AI Personality & Rules)</label>
+              <p className="text-xs text-cream-400 mt-0.5">Defines the tone, language boundaries, and strict behavioral instructions.</p>
+            </div>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-cream-300 font-mono">
+              {prompt.length} chars
+            </span>
+          </div>
           <textarea 
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="w-full h-32 bg-charcoal-900 border border-white/10 rounded-md p-3 text-cream-50 focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
-            placeholder="You are a helpful, professional AI assistant for PJ Lawn. Keep answers concise..."
+            className="w-full h-44 bg-charcoal-900 border border-white/15 rounded-xl p-4 text-cream-100 font-mono text-xs sm:text-sm leading-relaxed focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 focus:outline-none custom-scrollbar transition-all"
+            placeholder="You are the official AI assistant for PJ Lawn..."
           />
         </div>
 
-        <div className="bg-charcoal-800 p-6 rounded-md border border-white/5">
-          <label className="block text-sm font-medium text-cream-200 mb-2">Business Data (Context & Facts)</label>
-          <p className="text-xs text-cream-400 mb-4">Provide all the facts the AI needs to answer questions (pricing, location, contact info, rules, etc).</p>
+        {/* Business Context Box */}
+        <div className="bg-charcoal-800/90 p-6 rounded-2xl border border-white/10 shadow-xl space-y-3">
+          <div className="flex justify-between items-center">
+            <div>
+              <label className="block text-sm font-semibold text-gold-400">Business Data (Context, FAQs & Facts)</label>
+              <p className="text-xs text-cream-400 mt-0.5">Comprehensive facts referenced by the AI (pricing estimates, timings, location, WhatsApp, policies).</p>
+            </div>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-white/5 text-cream-300 font-mono">
+              {businessData.length} chars
+            </span>
+          </div>
           <textarea 
             value={businessData}
             onChange={(e) => setBusinessData(e.target.value)}
-            className="w-full h-64 bg-charcoal-900 border border-white/10 rounded-md p-3 text-cream-50 focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
-            placeholder="Address: 123 Main St... Phone: 999-999-9999... We allow outside catering..."
+            className="w-full h-80 bg-charcoal-900 border border-white/15 rounded-xl p-4 text-cream-100 font-mono text-xs sm:text-sm leading-relaxed focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 focus:outline-none custom-scrollbar transition-all"
+            placeholder="VENUE FACTS:&#10;- Location: Nagercoil&#10;- Phone: 9489724975&#10;- WhatsApp: +91 9489724975..."
           />
         </div>
       </div>

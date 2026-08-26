@@ -2,40 +2,147 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageSquare, X, Send, Bot, User } from 'lucide-react'
 
+function parseInlineFormatting(text: string): React.ReactNode[] {
+  // Regex to detect:
+  // 1. Markdown links: [Title](url)
+  // 2. Bold text: **text**
+  // 3. URLs (http/https)
+  // 4. WhatsApp links (wa.me)
+  // 5. Phone numbers (+91 94897 24975, 09489724975, 9489724975, etc.)
+  const regex = /(\[.*?\]\(https?:\/\/[^\s)]+\)|\*\*.*?\*\*|https?:\/\/[^\s<]+|wa\.me\/[^\s<]+|(?:\+91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}|0[6-9]\d{9})/g;
+  const parts = text.split(regex);
+
+  return parts.map((part, idx) => {
+    if (!part) return null;
+
+    // 1. Markdown link [Label](url)
+    const mdLinkMatch = part.match(/^\[(.*?)\]\((https?:\/\/[^\s)]+)\)$/);
+    if (mdLinkMatch) {
+      return (
+        <a
+          key={idx}
+          href={mdLinkMatch[2]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gold-400 hover:text-gold-300 underline font-medium inline-flex items-center gap-0.5"
+        >
+          {mdLinkMatch[1]}
+        </a>
+      );
+    }
+
+    // 2. Bold text **text**
+    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+      const inner = part.slice(2, -2).replace(/\*/g, '');
+      return (
+        <strong key={idx} className="font-semibold text-gold-400">
+          {parseInlineFormatting(inner)}
+        </strong>
+      );
+    }
+
+    // 3. URLs
+    if (/^https?:\/\/[^\s<]+$/.test(part)) {
+      const isWhatsApp = part.includes('wa.me') || part.includes('whatsapp.com');
+      return (
+        <a
+          key={idx}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={
+            isWhatsApp
+              ? "inline-flex items-center gap-1.5 px-2.5 py-0.5 my-0.5 rounded-full bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 hover:text-emerald-300 font-medium text-xs transition-all shadow-sm"
+              : "text-gold-400 hover:text-gold-300 underline font-medium"
+          }
+        >
+          {isWhatsApp ? '💬 WhatsApp' : part}
+        </a>
+      );
+    }
+
+    // 4. wa.me link without protocol
+    if (/^wa\.me\/[^\s<]+$/.test(part)) {
+      return (
+        <a
+          key={idx}
+          href={`https://${part}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 my-0.5 rounded-full bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 hover:text-emerald-300 font-medium text-xs transition-all shadow-sm"
+        >
+          💬 WhatsApp
+        </a>
+      );
+    }
+
+    // 5. Phone number
+    const trimmedPart = part.trim();
+    if (/^((?:\+91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}|0[6-9]\d{9})$/.test(trimmedPart)) {
+      const cleanDigits = trimmedPart.replace(/\D/g, '');
+      const phoneDigits = cleanDigits.length === 10 ? `+91${cleanDigits}` : cleanDigits.startsWith('91') ? `+${cleanDigits}` : cleanDigits.startsWith('0') ? `+91${cleanDigits.slice(1)}` : `+${cleanDigits}`;
+      return (
+        <a
+          key={idx}
+          href={`tel:${phoneDigits}`}
+          className="inline-flex items-center gap-1 px-2 py-0.5 my-0.5 rounded-md bg-gold-500/15 text-gold-400 border border-gold-500/30 hover:bg-gold-500/25 hover:text-gold-300 font-medium text-xs transition-all"
+        >
+          📞 {trimmedPart}
+        </a>
+      );
+    }
+
+    // Fallback: strip any stray asterisks
+    return part.replace(/\*/g, '');
+  });
+}
+
 function renderMessageText(content: string) {
-  const lines = content.split('\n')
+  const cleanContent = content
+    .replace(/\r\n/g, '\n')
+    .replace(/\*\*\*/g, '**');
+
+  const lines = cleanContent.split('\n');
+
   return (
-    <div className="space-y-1.5 leading-relaxed">
+    <div className="space-y-1.5 leading-relaxed text-cream-100">
       {lines.map((line, lineIdx) => {
-        if (!line.trim()) {
-          return <div key={lineIdx} className="h-1.5" />
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={lineIdx} className="h-1.5" />;
         }
-        
-        const parts = line.split(/(\*\*.*?\*\*|\*.*?\*)/g)
-        return (
-          <p key={lineIdx}>
-            {parts.map((part, partIdx) => {
-              if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
-                return (
-                  <strong key={partIdx} className="font-semibold text-gold-400">
-                    {part.slice(2, -2)}
-                  </strong>
-                )
-              }
-              if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
-                return (
-                  <em key={partIdx} className="italic text-cream-200">
-                    {part.slice(1, -1)}
-                  </em>
-                )
-              }
-              return part
-            })}
-          </p>
-        )
+
+        // Bullet lists (*, -, •)
+        const isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ');
+        const lineContent = isBullet ? trimmed.replace(/^(\*|-|•)\s+/, '') : line;
+
+        // Headers (### or ##)
+        const isHeader = /^#{1,3}\s+/.test(trimmed);
+        const headerText = isHeader ? trimmed.replace(/^#{1,3}\s+/, '') : lineContent;
+
+        const renderedLine = parseInlineFormatting(headerText);
+
+        if (isHeader) {
+          return (
+            <p key={lineIdx} className="font-semibold text-gold-400 text-sm mt-2 mb-1">
+              {renderedLine}
+            </p>
+          );
+        }
+
+        if (isBullet) {
+          return (
+            <div key={lineIdx} className="flex items-start gap-2 pl-1 my-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-gold-400 mt-2 shrink-0"></span>
+              <div className="flex-1">{renderedLine}</div>
+            </div>
+          );
+        }
+
+        return <p key={lineIdx}>{renderedLine}</p>;
       })}
     </div>
-  )
+  );
 }
 
 export function ChatbotWidget() {
@@ -131,7 +238,7 @@ export function ChatbotWidget() {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
               {messages.map((msg, idx) => (
                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`flex gap-2 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
