@@ -1,30 +1,40 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
+import { Sparkles, Heart, Utensils, Users } from 'lucide-react'
 
-// Reusing some gallery images to add life to the page
+// Images for visual sections
 import intimateImg from '@/assets/gallery/1.png?format=webp&w=800&as=url'
 import layoutImg from '@/assets/gallery/2.png?format=webp&w=800&as=url'
+import buffetImg from '@/assets/gallery/4.png?format=webp&w=800&as=url'
 
-const occasionsList = [
-  { name: 'Birthday Parties', desc: 'Celebrate another trip around the sun with joy, games, and great food.' },
-  { name: 'Anniversary Celebrations', desc: 'Honor years of love and togetherness in a romantic outdoor setting.' },
-  { name: 'Wedding Functions', desc: 'Pre-wedding rituals, haldi, mehendi, or sangeet under the open sky.' },
-  { name: 'Wedding Receptions', desc: 'A grand and elegant open-air reception to welcome the newlyweds.' },
-  { name: 'Engagement Functions', desc: 'Exchange rings surrounded by nature and ambient evening lighting.' },
-  { name: 'Family Functions', desc: 'Bring the whole family together for reunions and special milestones.' },
-  { name: 'Get-togethers', desc: 'Casual yet beautiful gatherings for friends, colleagues, or alumni.' },
-  { name: 'Private Parties', desc: 'Exclusive space for your private celebrations with customized setups.' },
-  { name: 'Celebrations', desc: 'Any moment worth celebrating deserves a beautiful venue like PJ Lawn.' },
-  { name: 'Social Gatherings', desc: 'Perfect for networking, club events, and community meetups.' },
-  { name: 'Dinner Functions', desc: 'Elegant evening sit-down dinners with beautiful table arrangements.' },
-  { name: 'Lunch/Dining Events', desc: 'Bright and cheerful daytime dining under the gentle outdoor shade.' },
-  { name: 'Buffet Events', desc: 'Ample space for lavish buffet spreads and smooth guest flow.' },
-  { name: 'Community Gatherings', desc: 'Spacious enough to host local community and cultural events.' },
-  { name: 'Small Functions', desc: 'Intimate setups designed specifically for smaller guest counts.' },
-  { name: 'Special Occasions', desc: 'If it is special to you, it is special to us. We host all unique events.' },
+const eventCategories = [
+  {
+    title: 'Weddings & Receptions',
+    icon: Heart,
+    desc: 'Exchange vows and celebrate milestones surrounded by nature and warm ambient lighting. Perfect for engagements, haldi, mehendi, and grand evening receptions.',
+    features: ['Illuminated evening setups', 'Open-air mandap & stage area', 'Dedicated photography zones', 'Comfortable guest seating']
+  },
+  {
+    title: 'Birthdays & Family Celebrations',
+    icon: Sparkles,
+    desc: 'Celebrate another trip around the sun, anniversaries, family reunions, and milestones with your loved ones in an exclusive private lawn environment.',
+    features: ['Safe & open space for kids', 'Ample free parking', 'Customizable decoration setups', 'Audio & music friendly']
+  },
+  {
+    title: 'Outdoor Dining & Buffet Gatherings',
+    icon: Utensils,
+    desc: 'Host delightful sit-down dinners, festive buffet lunches, and social gatherings with smooth guest flow and dedicated catering zones.',
+    features: ['Spacious buffet & serving layout', 'Hygienic hand-wash facilities', 'Daytime shade & evening breeze', 'Outside catering allowed']
+  }
 ]
 
-const fadeUp: any = {
+const occasionsChips = [
+  'Birthday Parties', 'Anniversaries', 'Wedding Receptions', 'Engagement Functions',
+  'Family Reunions', 'Private Dinners', 'Buffet Events', 'Social Meetups',
+  'Cultural Gatherings', 'Corporate Dinners', 'Get-Togethers', 'Special Milestones'
+]
+
+const fadeUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } }
 }
@@ -39,7 +49,7 @@ export default function Events() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
           className="text-gold-400 uppercase text-xs tracking-widest font-medium mb-4"
         >
-          Occasions
+          Occasions & Celebrations
         </motion.p>
         <motion.h1 
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
@@ -51,66 +61,118 @@ export default function Events() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
           className="text-cream-400 text-lg leading-relaxed"
         >
-          From intimate family milestones to grand celebrations, PJ Lawn is the perfect canvas for your special day. Explore the types of events we regularly host.
+          From intimate family gatherings to grand celebrations, our spacious open-air lawn provides the perfect natural backdrop for every special occasion.
         </motion.p>
       </section>
 
-      {/* Feature Images Break */}
-      <section className="container mx-auto px-4 mb-24">
-        <div className="grid md:grid-cols-2 gap-8">
+      {/* 3 Core Experience Categories */}
+      <section className="container mx-auto px-4 sm:px-6 lg:px-8 mb-24 max-w-6xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {eventCategories.map((cat, idx) => {
+            const Icon = cat.icon
+            return (
+              <motion.div
+                key={cat.title}
+                initial="hidden" whileInView="visible" viewport={{ once: true }}
+                variants={fadeUp}
+                transition={{ delay: idx * 0.15 }}
+                className="bg-charcoal-800/90 border border-white/5 hover:border-gold-500/30 p-8 rounded-2xl flex flex-col justify-between transition-all duration-300 shadow-xl group hover:-translate-y-1"
+              >
+                <div>
+                  <div className="w-12 h-12 rounded-full bg-gold-500/10 border border-gold-500/20 flex items-center justify-center mb-6 text-gold-400 group-hover:scale-110 transition-transform">
+                    <Icon size={24} />
+                  </div>
+                  <h3 className="text-xl font-serif text-cream-100 mb-3 group-hover:text-gold-300 transition-colors">
+                    {cat.title}
+                  </h3>
+                  <p className="text-cream-400 text-sm leading-relaxed mb-6">
+                    {cat.desc}
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-white/5 space-y-2">
+                  {cat.features.map((feat, fIdx) => (
+                    <div key={fIdx} className="flex items-center gap-2 text-xs text-cream-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gold-400 shrink-0"></span>
+                      <span>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* Feature Images Showcase */}
+      <section className="container mx-auto px-4 mb-24 max-w-6xl">
+        <div className="grid md:grid-cols-3 gap-6">
           <motion.div 
             initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}
-            className="relative aspect-video rounded-md overflow-hidden"
+            className="relative aspect-video md:aspect-[4/3] rounded-xl overflow-hidden border border-white/10 shadow-xl"
           >
             <img 
               src={typeof layoutImg === 'string' ? layoutImg : (layoutImg as unknown as string)}
               alt="PJ Lawn Venue Layout" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
             />
           </motion.div>
           <motion.div 
-            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ delay: 0.2 }}
-            className="relative aspect-video rounded-md overflow-hidden"
+            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ delay: 0.15 }}
+            className="relative aspect-video md:aspect-[4/3] rounded-xl overflow-hidden border border-white/10 shadow-xl"
           >
             <img 
               src={typeof intimateImg === 'string' ? intimateImg : (intimateImg as unknown as string)}
               alt="Intimate Family Gathering" 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+            />
+          </motion.div>
+          <motion.div 
+            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} transition={{ delay: 0.3 }}
+            className="relative aspect-video md:aspect-[4/3] rounded-xl overflow-hidden border border-white/10 shadow-xl"
+          >
+            <img 
+              src={typeof buffetImg === 'string' ? buffetImg : (buffetImg as unknown as string)}
+              alt="Lawn Dining and Events" 
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
             />
           </motion.div>
         </div>
       </section>
 
-      {/* Occasions Grid */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 mb-32">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {occasionsList.map((occasion, index) => (
-            <motion.div
-              key={occasion.name}
-              initial="hidden" whileInView="visible" viewport={{ once: true }}
-              variants={fadeUp}
-              transition={{ delay: index * 0.05 }}
-              className="bg-charcoal-800 border border-white/5 p-6 rounded-md hover:border-gold-500/30 transition-colors group"
+      {/* Occasions Chips Cloud */}
+      <section className="container mx-auto px-4 mb-24 text-center max-w-4xl">
+        <h3 className="text-xl font-serif text-cream-100 mb-6">Popular Events Hosted at PJ Lawn</h3>
+        <div className="flex flex-wrap justify-center gap-2.5">
+          {occasionsChips.map((occ, idx) => (
+            <span
+              key={idx}
+              className="px-4 py-2 rounded-full bg-charcoal-800 border border-white/10 text-cream-200 text-xs font-medium hover:border-gold-500/40 hover:text-gold-300 transition-colors"
             >
-              <h3 className="text-lg font-serif text-gold-400 mb-3 group-hover:text-gold-300 transition-colors">
-                {occasion.name}
-              </h3>
-              <p className="text-cream-400 text-sm leading-relaxed">
-                {occasion.desc}
-              </p>
-            </motion.div>
+              {occ}
+            </span>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="container mx-auto px-4 text-center">
-        <div className="border-t border-white/10 pt-16">
-          <h2 className="text-display-sm font-serif text-cream-100 mb-6">Don't see your event listed?</h2>
-          <p className="text-cream-400 mb-8 max-w-2xl mx-auto">
-            We are highly flexible and can accommodate custom event requirements. Reach out to us to discuss your specific needs.
+      {/* Welcoming Universal CTA */}
+      <section className="container mx-auto px-4 text-center max-w-3xl">
+        <div className="bg-charcoal-800/90 border border-gold-500/20 p-10 sm:p-14 rounded-3xl shadow-2xl space-y-6">
+          <div className="w-12 h-12 rounded-full bg-gold-500/10 flex items-center justify-center mx-auto text-gold-400">
+            <Users size={24} />
+          </div>
+          <h2 className="text-display-sm font-serif text-cream-100">Host Any Celebration at PJ Lawn</h2>
+          <p className="text-cream-400 text-base leading-relaxed max-w-xl mx-auto">
+            Whatever your special occasion, our open-air lawn is fully equipped and ready for your guests. Check date availability and reserve online in minutes.
           </p>
-          <Button to="/book" size="lg">Request a Custom Quote</Button>
+          <div className="pt-2 flex flex-col sm:flex-row justify-center gap-4">
+            <Button to="/book" size="lg" className="shadow-lg shadow-gold-500/20">
+              Check Availability & Book
+            </Button>
+            <Button to="/location" variant="outline" size="lg">
+              View Venue Location
+            </Button>
+          </div>
         </div>
       </section>
 

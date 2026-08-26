@@ -134,71 +134,127 @@ export default function Navbar() {
             </Link>
           </nav>
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile Menu Interactive Button */}
           <button
-            className="md:hidden text-cream-200 hover:text-gold-400 transition-colors p-3 -mr-3"
+            className="md:hidden flex items-center gap-2 px-3 py-1.5 rounded-full bg-charcoal-800/80 border border-gold-500/30 text-cream-100 hover:text-gold-300 hover:border-gold-500/60 transition-all shadow-md active:scale-95 z-50"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle Menu"
           >
-            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            <span className="text-xs font-semibold uppercase tracking-wider text-gold-400">
+              {isMobileMenuOpen ? 'Close' : 'Menu'}
+            </span>
+            <div className="w-5 h-5 flex items-center justify-center text-gold-400">
+              {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            </div>
           </button>
         </div>
       </div>
 
-      {/* Mobile Nav */}
+      {/* Mobile Luxury Fullscreen Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-charcoal-800 border-b border-white/10 overflow-hidden"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="md:hidden fixed inset-0 top-0 left-0 right-0 bottom-0 min-h-screen w-full bg-charcoal-950/95 backdrop-blur-2xl z-40 flex flex-col justify-between pt-24 pb-8 px-6 overflow-y-auto"
           >
-            <nav className="flex flex-col px-4 py-6 space-y-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={cn(
-                    'block text-lg py-2 transition-colors',
-                    location.pathname === link.path ? 'text-gold-400' : 'text-cream-200'
-                  )}
-                >
-                  {link.name}
-                </Link>
-              ))}
-              <div className="pt-4 mt-2 border-t border-white/10 space-y-4">
-                {user ? (
-                  <>
+            {/* Nav Links */}
+            <nav className="flex flex-col space-y-2 py-4">
+              {navLinks.map((link, idx) => {
+                const isActive = location.pathname === link.path
+                return (
+                  <motion.div
+                    key={link.path}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.04, duration: 0.3 }}
+                  >
                     <Link
-                      to="/dashboard"
-                      className="block text-lg py-2 transition-colors text-cream-200 hover:text-gold-400"
+                      to={link.path}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        'flex items-center justify-between text-2xl font-serif py-2.5 transition-all',
+                        isActive
+                          ? 'text-gold-400 font-bold pl-2 border-l-2 border-gold-400'
+                          : 'text-cream-200 hover:text-gold-300 hover:pl-2'
+                      )}
                     >
-                      Dashboard
+                      <span>{link.name}</span>
+                      {isActive && (
+                        <span className="w-2 h-2 rounded-full bg-gold-400 shadow-[0_0_8px_rgba(212,175,55,0.8)]"></span>
+                      )}
                     </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left text-lg py-2 transition-colors text-red-400"
-                    >
-                      Logout
-                    </button>
-                  </>
+                  </motion.div>
+                )
+              })}
+
+              {user && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: navLinks.length * 0.04, duration: 0.3 }}
+                >
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center justify-between text-2xl font-serif py-2.5 transition-all',
+                      location.pathname === '/dashboard'
+                        ? 'text-gold-400 font-bold pl-2 border-l-2 border-gold-400'
+                        : 'text-cream-200 hover:text-gold-300 hover:pl-2'
+                    )}
+                  >
+                    <span>Dashboard</span>
+                  </Link>
+                </motion.div>
+              )}
+            </nav>
+
+            {/* Bottom Actions */}
+            <div className="pt-6 border-t border-white/10 space-y-3">
+              <Link
+                to="/book"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full flex items-center justify-center py-4 bg-gold-400 hover:bg-gold-300 text-charcoal-950 font-black text-sm uppercase tracking-widest rounded-xl shadow-lg shadow-gold-500/20 active:scale-98 transition-all"
+              >
+                Book Venue Now
+              </Link>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <a
+                  href="https://wa.me/919489724975"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] font-semibold text-xs transition-all hover:bg-[#25D366]/25"
+                >
+                  WhatsApp Us
+                </a>
+
+                {user ? (
+                  <button
+                    onClick={() => {
+                      handleLogout()
+                      setIsMobileMenuOpen(false)
+                    }}
+                    className="flex items-center justify-center py-3 px-4 rounded-xl bg-charcoal-800 border border-white/10 text-red-400 font-semibold text-xs transition-all hover:bg-red-500/10"
+                  >
+                    Sign Out
+                  </button>
                 ) : (
                   <button
-                    onClick={handleLogin}
-                    className="block w-full text-left text-lg py-2 transition-colors text-cream-200 hover:text-gold-400"
+                    onClick={() => {
+                      handleLogin()
+                      setIsMobileMenuOpen(false)
+                    }}
+                    className="flex items-center justify-center py-3 px-4 rounded-xl bg-charcoal-800 border border-white/10 text-cream-200 hover:text-gold-300 font-semibold text-xs transition-all hover:bg-charcoal-700"
                   >
-                    Login
+                    Customer Login
                   </button>
                 )}
-                <Link
-                  to="/book"
-                  className="block w-full text-center px-5 py-3 bg-gold-400 hover:bg-gold-300 text-black text-base font-bold uppercase tracking-wider mt-4 rounded-md shadow-md"
-                >
-                  Book Now
-                </Link>
               </div>
-            </nav>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

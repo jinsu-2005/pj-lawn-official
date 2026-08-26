@@ -1,50 +1,9 @@
-import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Send, Phone } from 'lucide-react'
+import { Phone, MapPin, Calendar, Clock } from 'lucide-react'
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
 import { Button } from '@/components/ui/Button'
 
 export default function Contact() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    message: ''
-  })
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    
-    try {
-      await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'contact_inquiry',
-          data: {
-            name: formData.name,
-            phone: formData.phone,
-            email: formData.email,
-            message: formData.message
-          }
-        })
-      })
-      setIsSuccess(true)
-      setFormData({ name: '', phone: '', email: '', message: '' })
-      setTimeout(() => setIsSuccess(false), 6000)
-    } catch (err) {
-      console.error("Failed to send contact inquiry:", err)
-      // Even if network glitches, display graceful feedback
-      setIsSuccess(true)
-      setTimeout(() => setIsSuccess(false), 6000)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   return (
     <div className="pt-32 pb-24 min-h-screen">
       
@@ -54,144 +13,127 @@ export default function Contact() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
           className="text-gold-400 uppercase text-xs tracking-widest font-medium mb-4"
         >
-          Get in Touch
+          Direct Connect
         </motion.p>
         <motion.h1 
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           className="text-display-lg font-serif text-cream-50 mb-6"
         >
-          Contact Us
+          Contact PJ Lawn
         </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+          className="text-cream-400 text-lg leading-relaxed"
+        >
+          We are here to assist with venue visits, dates availability, pricing, and all your event requirements. Connect with us directly through any channel below.
+        </motion.p>
       </section>
 
-      {/* Main Content */}
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
-        <div className="grid lg:grid-cols-2 gap-16">
+      {/* Direct Connect Grid */}
+      <section className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           
-          {/* Contact Info */}
+          {/* WhatsApp Direct Chat Card */}
           <motion.div 
-            initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+            className="bg-charcoal-800/90 border border-white/5 hover:border-[#25D366]/40 p-8 rounded-2xl shadow-xl flex flex-col justify-between transition-all group"
           >
-            <h2 className="text-display-sm font-serif text-cream-100 mb-6">We'd love to hear from you</h2>
-            <p className="text-cream-400 text-lg mb-10 leading-relaxed max-w-md">
-              Whether you have a question about availability, pricing, or want to schedule a venue tour, our team is ready to answer all your questions.
-            </p>
-            
-            <div className="space-y-8 mb-12">
-              <div className="flex items-start gap-4 p-6 bg-charcoal-800 rounded-md border border-white/5">
-                <div className="w-12 h-12 rounded-full bg-gold-500/10 flex items-center justify-center shrink-0">
-                  <Phone className="text-gold-400" size={24} />
-                </div>
-                <div>
-                  <h3 className="text-cream-100 font-medium mb-1">Call Us Directly</h3>
-                  <p className="text-cream-400 text-sm mb-2">Available 9am to 8pm daily</p>
-                  <a href="tel:+919489724975" className="text-gold-400 font-medium hover:text-gold-300 transition-colors">
-                    +91 94897 24975
-                  </a>
-                </div>
+            <div>
+              <div className="w-14 h-14 rounded-2xl bg-[#25D366]/15 border border-[#25D366]/20 flex items-center justify-center mb-6 text-[#25D366] group-hover:scale-105 transition-transform">
+                <WhatsAppIcon className="w-7 h-7" />
               </div>
-
-              <div className="flex items-start gap-4 p-6 bg-charcoal-800 rounded-md border border-white/5">
-                <div className="w-12 h-12 rounded-full bg-[#25D366]/10 flex items-center justify-center shrink-0">
-                  <WhatsAppIcon className="w-6 h-6 text-[#25D366]" />
-                </div>
-                <div>
-                  <h3 className="text-cream-100 font-medium mb-1">WhatsApp Chat</h3>
-                  <p className="text-cream-400 text-sm mb-2">Quickest way to get a response</p>
-                  <Button 
-                    href="https://wa.me/919489724975?text=Hi%2C%20I'd%20like%20to%20know%20more%20about%20booking%20PJ%20Lawn" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    variant="outline"
-                    className="text-[#25D366] border-[#25D366] hover:bg-[#25D366]/10 gap-2 h-9 px-4 text-xs mt-2"
-                  >
-                    Start a conversation
-                  </Button>
-                </div>
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-[#25D366]/10 text-[#25D366] text-[11px] font-semibold uppercase tracking-wider mb-2">
+                Fastest Response
               </div>
+              <h3 className="text-xl font-serif text-cream-100 mb-2">WhatsApp Chat</h3>
+              <p className="text-cream-400 text-sm leading-relaxed mb-6">
+                Chat directly with our venue coordinator for instant replies on pricing, photos, and date availability.
+              </p>
             </div>
+            <a 
+              href="https://wa.me/919489724975?text=Hi%2C%20I'd%20like%20to%20know%20more%20about%20booking%20PJ%20Lawn%20for%20my%20event." 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-charcoal-950 font-bold text-sm transition-all shadow-lg shadow-[#25D366]/20 active:scale-95"
+            >
+              <WhatsAppIcon className="w-5 h-5" /> Chat on WhatsApp
+            </a>
           </motion.div>
 
-          {/* Contact Form */}
+          {/* Direct Phone Call Card */}
           <motion.div 
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }}
-            className="bg-charcoal-800 border border-white/5 p-8 sm:p-10 rounded-md"
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+            className="bg-charcoal-800/90 border border-white/5 hover:border-gold-500/40 p-8 rounded-2xl shadow-xl flex flex-col justify-between transition-all group"
           >
-            <h3 className="text-2xl font-serif text-cream-100 mb-6">Send a Message</h3>
-            
-            {isSuccess ? (
-              <div className="bg-gold-500/10 border border-gold-500/30 text-gold-400 p-6 rounded-md text-center">
-                <p className="font-medium text-lg mb-2">Thank you!</p>
-                <p className="text-sm">Your message has been sent successfully. We will get back to you shortly.</p>
+            <div>
+              <div className="w-14 h-14 rounded-2xl bg-gold-500/15 border border-gold-500/20 flex items-center justify-center mb-6 text-gold-400 group-hover:scale-105 transition-transform">
+                <Phone size={26} />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="text-xs uppercase tracking-widest text-cream-400 font-medium">Full Name</label>
-                    <input 
-                      type="text" 
-                      id="name" 
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 focus:outline-none focus:border-gold-500 transition-colors"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="phone" className="text-xs uppercase tracking-widest text-cream-400 font-medium">Phone Number</label>
-                    <input 
-                      type="tel" 
-                      id="phone" 
-                      required
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 focus:outline-none focus:border-gold-500 transition-colors"
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-xs uppercase tracking-widest text-cream-400 font-medium">Email Address (Optional)</label>
-                  <input 
-                    type="email" 
-                    id="email" 
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 focus:outline-none focus:border-gold-500 transition-colors"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="message" className="text-xs uppercase tracking-widest text-cream-400 font-medium">Message</label>
-                  <textarea 
-                    id="message" 
-                    rows={4}
-                    required
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 focus:outline-none focus:border-gold-500 transition-colors resize-none"
-                    placeholder="Tell us about your event..."
-                  ></textarea>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting} 
-                  className="w-full h-14 text-base mt-2"
-                >
-                  {isSubmitting ? 'Sending...' : (
-                    <span className="flex items-center gap-2">
-                      Send Message <Send size={18} />
-                    </span>
-                  )}
-                </Button>
-              </form>
-            )}
+              <div className="inline-block px-2.5 py-0.5 rounded-full bg-gold-500/10 text-gold-400 text-[11px] font-semibold uppercase tracking-wider mb-2">
+                9:00 AM – 8:00 PM Daily
+              </div>
+              <h3 className="text-xl font-serif text-cream-100 mb-2">Phone Call</h3>
+              <p className="text-cream-400 text-sm leading-relaxed mb-6">
+                Speak directly with the venue management to discuss custom requirements, guest count, and bookings.
+              </p>
+            </div>
+            <a 
+              href="tel:+919489724975" 
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gold-400 hover:bg-gold-300 text-charcoal-950 font-bold text-sm transition-all shadow-lg shadow-gold-500/20 active:scale-95"
+            >
+              <Phone size={18} /> Call +91 94897 24975
+            </a>
+          </motion.div>
+
+          {/* Online Booking Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-charcoal-800/90 border border-white/5 hover:border-gold-500/40 p-8 rounded-2xl shadow-xl flex flex-col justify-between transition-all group"
+          >
+            <div>
+              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gold-400 group-hover:scale-105 transition-transform">
+                <Calendar size={26} />
+              </div>
+              <h3 className="text-xl font-serif text-cream-100 mb-2">Online Date Reservation</h3>
+              <p className="text-cream-400 text-sm leading-relaxed mb-6">
+                Select your preferred event date and session (Morning, Evening, or Full Day) and submit an instant reservation request.
+              </p>
+            </div>
+            <Button to="/book" size="lg" className="w-full">
+              Reserve Online Now
+            </Button>
+          </motion.div>
+
+          {/* Venue Location Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
+            className="bg-charcoal-800/90 border border-white/5 hover:border-gold-500/40 p-8 rounded-2xl shadow-xl flex flex-col justify-between transition-all group"
+          >
+            <div>
+              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 text-gold-400 group-hover:scale-105 transition-transform">
+                <MapPin size={26} />
+              </div>
+              <h3 className="text-xl font-serif text-cream-100 mb-2">Visit PJ Lawn</h3>
+              <p className="text-cream-400 text-sm leading-relaxed mb-6">
+                Paul Vathiyar Compound, Carmel School Road, Ramanputhur, Nagercoil, Tamil Nadu 629002.
+              </p>
+            </div>
+            <Button to="/location" variant="outline" size="lg" className="w-full">
+              View Map & Directions
+            </Button>
           </motion.div>
 
         </div>
+
+        {/* Operating Hours Note */}
+        <div className="p-6 bg-charcoal-800/60 border border-white/5 rounded-2xl text-center flex flex-col sm:flex-row items-center justify-center gap-4 text-cream-300 text-sm">
+          <div className="flex items-center gap-2 text-gold-400 font-medium">
+            <Clock size={18} /> Venue Operating Hours:
+          </div>
+          <div>Daytime Sessions (7:00 AM – 3:00 PM) &amp; Evening Sessions (4:00 PM – 11:00 PM)</div>
+        </div>
       </section>
+
     </div>
   )
 }

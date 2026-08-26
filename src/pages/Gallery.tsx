@@ -210,19 +210,26 @@ export default function Gallery() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-charcoal-950/95 backdrop-blur-md flex items-center justify-center"
+            onClick={closeLightbox}
+            className="fixed inset-0 z-[100] bg-charcoal-950/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
           >
             {/* Close Button */}
             <button 
-              onClick={closeLightbox}
-              className="absolute top-6 right-6 p-2 rounded-full bg-charcoal-800/80 text-cream-200 hover:text-gold-400 hover:bg-charcoal-700 transition-all z-[110]"
+              onClick={(e) => {
+                e.stopPropagation()
+                closeLightbox()
+              }}
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2.5 rounded-full bg-charcoal-800/90 border border-white/10 text-cream-200 hover:text-gold-400 hover:border-gold-500/50 hover:bg-charcoal-700 transition-all z-[120] shadow-xl"
               aria-label="Close lightbox"
             >
-              <X size={28} />
+              <X size={26} />
             </button>
 
             {/* Carousel Container */}
-            <div className="relative w-full max-w-6xl mx-auto px-4 md:px-12">
+            <div 
+              className="relative w-full max-w-6xl mx-auto px-2 md:px-12 cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="overflow-hidden" ref={emblaRef}>
                 <div className="flex touch-pan-y">
                   {filteredItems.map((item) => (
