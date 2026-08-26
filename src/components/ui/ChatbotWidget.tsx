@@ -162,6 +162,13 @@ function renderMessageText(content: string) {
   );
 }
 
+const STARTER_QUESTIONS = [
+  'Contact Info',
+  'Venue Address',
+  'Venue Pricing',
+  'How booking works'
+]
+
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant', content: string }[]>([
@@ -179,11 +186,10 @@ export function ChatbotWidget() {
     scrollToBottom()
   }, [messages, isOpen])
 
-  const handleSend = async (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if (!input.trim() || isLoading) return
+  const sendMessage = async (textToSend: string) => {
+    if (!textToSend.trim() || isLoading) return
 
-    const userMsg = input.trim()
+    const userMsg = textToSend.trim()
     setInput('')
     setMessages(prev => [...prev, { role: 'user', content: userMsg }])
     setIsLoading(true)
@@ -210,6 +216,11 @@ export function ChatbotWidget() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleSend = (e?: React.FormEvent) => {
+    e?.preventDefault()
+    sendMessage(input)
   }
 
   return (
@@ -268,6 +279,7 @@ export function ChatbotWidget() {
                   </div>
                 </div>
               ))}
+
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="flex gap-2 max-w-[85%] flex-row">
@@ -282,6 +294,26 @@ export function ChatbotWidget() {
                   </div>
                 </div>
               )}
+
+              {/* Predefined Starter Questions (Non-scrollable 2x2 grid) */}
+              {messages.length === 1 && !isLoading && (
+                <div className="pt-2">
+                  <p className="text-[11px] text-cream-400 mb-2 font-medium px-1">Common Questions:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {STARTER_QUESTIONS.map((question, qIdx) => (
+                      <button
+                        key={qIdx}
+                        type="button"
+                        onClick={() => sendMessage(question)}
+                        className="p-2.5 rounded-xl bg-charcoal-800 border border-white/10 hover:border-gold-500/50 hover:bg-gold-500/10 text-cream-200 hover:text-gold-400 text-xs font-medium text-left transition-all duration-200 shadow-sm leading-tight active:scale-95"
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div ref={messagesEndRef} />
             </div>
 
