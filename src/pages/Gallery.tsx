@@ -2,29 +2,31 @@ import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
-
-// Import all gallery images
-import img1 from '@/assets/gallery/1.png?format=webp&w=1200&as=url'
-import img2 from '@/assets/gallery/2.png?format=webp&w=1200&as=url'
-import img3 from '@/assets/gallery/3.png?format=webp&w=1200&as=url'
-import img4 from '@/assets/gallery/4.png?format=webp&w=1200&as=url'
-import img5 from '@/assets/gallery/5.jpg?format=webp&w=1200&as=url'
-import img6 from '@/assets/gallery/6.png?format=webp&w=1200&as=url'
-
-const galleryItems = [
-  { id: 1, src: img3, alt: 'PJ Lawn Venue at Night (Hero)', span: 'md:col-span-2 md:row-span-2' },
-  { id: 2, src: img5, alt: 'PJ Lawn Entrance Sign', span: 'md:col-span-1 md:row-span-2' },
-  { id: 3, src: img1, alt: 'Intimate Family Gathering', span: 'md:col-span-1 md:row-span-1' },
-  { id: 4, src: img2, alt: 'PJ Lawn Venue Layout', span: 'md:col-span-1 md:row-span-1' },
-  { id: 5, src: img4, alt: 'Buffet Area Setup', span: 'md:col-span-2 md:row-span-1' },
-  { id: 6, src: img6, alt: 'Handwash Amenities', span: 'md:col-span-1 md:row-span-1' },
-]
+import { db } from '@/lib/firebase'
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore'
 
 export default function Gallery() {
+  const [galleryItems, setGalleryItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, startIndex: selectedIndex })
+
+  useEffect(() => {
+    const q = query(collection(db, "gallery")) 
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const items: any[] = []
+      snapshot.forEach(doc => items.push({ id: doc.id, ...doc.data() }))
+      items.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0))
+      setGalleryItems(items)
+      setLoading(false)
+    }, (error) => {
+      console.error("Error fetching gallery:", error)
+      setLoading(false)
+    })
+    return () => unsubscribe()
+  }, [])
 
   const openLightbox = (index: number) => {
     setSelectedIndex(index)
@@ -81,31 +83,45 @@ export default function Gallery() {
         </motion.h1>
       </section>
 
-      {/* Masonry-ish Grid */}
+      {/* Masonry Grid */}
       <section className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-[250px] gap-4">
-          {galleryItems.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative rounded-md overflow-hidden group cursor-pointer ${item.span}`}
-              onClick={() => openLightbox(index)}
-            >
-              <img 
-                src={typeof item.src === 'string' ? item.src : (item.src as unknown as string)} 
-                alt={item.alt}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="image-scrim opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-widest text-sm font-medium">
-                  View
-                </span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="columns-1 sm:columns-2 md:columns-3 gap-4 space-y-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-charcoal-800 animate-pulse rounded-md w-full" style={{ height: `${Math.floor(Math.random() * 200) + 200}px` }}></div>
+            ))}
+          </div>
+        ) : galleryItems.length === 0 ? (
+          <div className="text-center py-24 text-cream-400">
+            <p>The gallery is currently empty.</p>
+          </div>
+        ) : (
+          <div className="columns-1 sm:columns-2 md:columns-3 gap-4 space-y-4">
+            {galleryItems.map((item, index) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                className="relative rounded-md overflow-hidden group cursor-pointer inline-block w-full"
+                onClick={() => openLightbox(index)}
+              >
+                <img 
+                  src={item.url} 
+                  alt={item.alt}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="image-scrim opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center absolute inset-0">
+                  <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-widest text-sm font-medium">
+                    View
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Lightbox Modal */}
@@ -133,8 +149,10 @@ export default function Gallery() {
                   {galleryItems.map((item) => (
                     <div key={item.id} className="flex-[0_0_100%] min-w-0 flex items-center justify-center h-[80vh]">
                       <img 
-                        src={typeof item.src === 'string' ? item.src : (item.src as unknown as string)}
+                        src={item.url}
                         alt={item.alt}
+                        loading="lazy"
+                        decoding="async"
                         className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-md"
                       />
                     </div>

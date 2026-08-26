@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import Navbar from './Navbar'
 import Footer from './Footer'
 import SparklesCanvas from '../ui/SparklesCanvas'
+import { ChatbotWidget } from '../ui/ChatbotWidget'
 
 export default function Layout() {
   return (
@@ -12,6 +13,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <Footer />
+      <ChatbotWidget />
     </div>
   )
 }

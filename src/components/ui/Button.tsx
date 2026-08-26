@@ -19,19 +19,19 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', to, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:pointer-events-none disabled:opacity-50 uppercase tracking-wider rounded-md'
+    const baseStyles = 'inline-flex items-center justify-center font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:pointer-events-none disabled:opacity-50 uppercase tracking-widest rounded-md'
     
     const variants = {
-      primary: 'bg-gold-500 text-charcoal-950 font-bold hover:bg-gold-400 shadow-xl shadow-black/60 hover:shadow-gold-500/25 border border-gold-400/50 transition-all duration-300',
-      secondary: 'bg-charcoal-900/90 text-cream-100 backdrop-blur-md border border-white/15 hover:bg-charcoal-800 shadow-lg shadow-black/50 transition-all duration-300',
-      outline: 'border-2 border-gold-400 bg-charcoal-950/80 text-gold-300 backdrop-blur-md hover:bg-gold-500/25 hover:text-gold-100 hover:border-gold-300 shadow-xl shadow-black/70 font-semibold transition-all duration-300 [text-shadow:_0_1px_4px_rgba(0,0,0,0.9)]',
-      ghost: 'hover:bg-white/10 hover:text-cream-100 text-cream-300 font-medium transition-colors',
+      primary: 'bg-gold-400 text-black font-black hover:bg-gold-300 shadow-xl shadow-black/60 hover:shadow-gold-400/30 border border-gold-300/60 transition-all duration-300',
+      secondary: 'bg-charcoal-900/90 text-cream-100 backdrop-blur-md border border-white/15 hover:bg-charcoal-800 shadow-lg shadow-black/50 transition-all duration-300 font-bold',
+      outline: 'border-2 border-gold-400 bg-charcoal-950/80 text-gold-300 backdrop-blur-md hover:bg-gold-400 hover:text-black hover:border-gold-300 shadow-xl shadow-black/70 font-extrabold transition-all duration-300 [text-shadow:_0_1px_4px_rgba(0,0,0,0.9)]',
+      ghost: 'hover:bg-white/10 hover:text-cream-100 text-cream-300 font-bold transition-colors',
     }
     
     const sizes = {
-      sm: 'h-9 px-4 text-xs',
-      md: 'h-11 px-8 text-sm',
-      lg: 'h-14 px-10 text-base',
+      sm: 'h-10 px-5 text-sm font-extrabold',
+      md: 'h-12 px-8 text-base font-black',
+      lg: 'h-14 px-10 text-lg font-black tracking-[0.1em]',
     }
 
     const classes = cn(baseStyles, variants[variant], sizes[size], className)

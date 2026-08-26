@@ -128,7 +128,7 @@ export default function Navbar() {
             )}
             <Link
               to="/book"
-              className="px-5 py-2.5 bg-gold-500 hover:bg-gold-400 text-charcoal-900 text-sm font-medium transition-colors uppercase tracking-wider"
+              className="px-6 py-2.5 bg-gold-400 hover:bg-gold-300 text-black text-sm font-black transition-all uppercase tracking-widest rounded-md shadow-md hover:shadow-gold-400/25"
             >
               Book Now
             </Link>
@@ -193,7 +193,7 @@ export default function Navbar() {
                 )}
                 <Link
                   to="/book"
-                  className="block w-full text-center px-5 py-3 bg-gold-500 text-charcoal-900 text-base font-medium uppercase tracking-wider mt-4"
+                  className="block w-full text-center px-5 py-3 bg-gold-400 hover:bg-gold-300 text-black text-base font-bold uppercase tracking-wider mt-4 rounded-md shadow-md"
                 >
                   Book Now
                 </Link>

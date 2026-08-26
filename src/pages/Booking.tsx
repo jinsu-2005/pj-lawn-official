@@ -9,9 +9,8 @@ import { format } from 'date-fns'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 import { auth, googleProvider } from '@/lib/firebase'
-import { signInWithPopup } from 'firebase/auth'
+import { signInWithPopup, onAuthStateChanged } from 'firebase/auth'
 import { checkAndHoldDate, createBooking, getPricingTiers, PricingTier } from '@/lib/bookingService'
-import emailjs from '@emailjs/browser'
 
 const bookingSchema = z.object({
   date: z.string().min(1, 'Date is required'),
@@ -31,8 +30,9 @@ export default function Booking() {
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [currentUser, setCurrentUser] = useState<any>(null)
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<BookingFormData>({
+  const { register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       guestCount: 100,
@@ -40,6 +40,21 @@ export default function Booking() {
     },
     mode: 'onChange'
   })
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user)
+      if (user) {
+        // Pre-fill if missing
+        const values = getValues()
+        if (!values.name && user.displayName) setValue('name', user.displayName)
+        if (!values.email && user.email) setValue('email', user.email)
+      }
+    })
+    return () => unsubscribe()
+  }, [setValue, getValues])
+
+
 
   const watchDate = watch('date')
   const watchGuestCount = watch('guestCount')
@@ -125,35 +140,28 @@ export default function Booking() {
 
       const bookingId = await createBooking(bookingData)
 
-      // 4. Send EmailJS notifications (both Customer and Admin templates if configured)
-      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const customerTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-      const adminTemplateId = import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID;
-      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-
-      if (serviceId && publicKey) {
-        const templateParams = {
-          booking_id: bookingId,
-          customer_name: data.name,
-          customer_phone: data.phone,
-          customer_email: data.email || user.email || '',
-          event_date: data.date,
-          event_type: data.eventType,
-          guest_count: data.guestCount,
-          notes: data.notes || ''
-        };
-
-        // Send customer confirmation
-        if (customerTemplateId) {
-          emailjs.send(serviceId, customerTemplateId, templateParams, publicKey)
-            .catch(err => console.error("EmailJS customer booking error:", err));
-        }
-
-        // Send admin notification
-        if (adminTemplateId) {
-          emailjs.send(serviceId, adminTemplateId, templateParams, publicKey)
-            .catch(err => console.error("EmailJS admin booking error:", err));
-        }
+      // 4. Send Resend transactional email notifications (Customer + Admin)
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'booking_request',
+            data: {
+              bookingId,
+              customerName: data.name,
+              customerPhone: data.phone,
+              customerEmail: data.email || user.email || '',
+              eventDate: data.date,
+              eventType: data.eventType,
+              guestCount: data.guestCount,
+              notes: data.notes || '',
+              estimatedPrice: estimatedPrice || 15000
+            }
+          })
+        })
+      } catch (emailErr) {
+        console.error("Resend booking email error:", emailErr)
       }
 
       setStep(4)
@@ -216,6 +224,18 @@ export default function Booking() {
               {/* Step 1: Date */}
               {step === 1 && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  {!currentUser && (
+                    <div className="mb-6 p-4 bg-charcoal-800 border border-gold-500/20 rounded-md flex items-center justify-between shadow-lg">
+                      <div>
+                        <p className="text-sm font-medium text-cream-100">Already have an account?</p>
+                        <p className="text-xs text-cream-400 mt-1">Sign in to autofill details and track your booking.</p>
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={() => signInWithPopup(auth, googleProvider)} className="border-gold-500/50 text-gold-400 hover:bg-gold-500/10 hover:text-gold-300">
+                        Sign In
+                      </Button>
+                    </div>
+                  )}
+
                   <h2 className="text-xl font-serif text-cream-100 mb-6">When is your event?</h2>
                   
                   <div className="bg-charcoal-900 border border-white/10 rounded-md mb-8 flex flex-col items-center justify-center py-8">
@@ -249,6 +269,22 @@ export default function Booking() {
                       disabled={[{ before: new Date() }]}
                       className="p-4"
                     />
+                    
+                    <div className="flex gap-4 mt-2 pt-6 border-t border-white/5 w-full max-w-[280px] justify-center text-xs text-cream-400">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm border border-white/20"></div>
+                        <span>Available</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm bg-gold-500"></div>
+                        <span className="text-cream-200">Selected</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm bg-white/10"></div>
+                        <span>Unavailable</span>
+                      </div>
+                    </div>
+
                     {/* Hidden input to satisfy form validation */}
                     <input type="hidden" {...register('date')} />
                     {errors.date && <p className="text-red-400 text-sm mt-2">{errors.date.message}</p>}
@@ -343,15 +379,47 @@ export default function Booking() {
 
               {/* Step 4: Success */}
               {step === 4 && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
-                  <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle2 className="text-green-400 w-10 h-10" />
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-left py-2">
+                  <div className="text-center mb-8">
+                    <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <CheckCircle2 className="text-green-400 w-10 h-10" />
+                    </div>
+                    <h2 className="text-2xl font-serif text-cream-100 mb-4">Request Received!</h2>
+                    <p className="text-cream-400 max-w-md mx-auto">
+                      Thank you, {watchName}. Your booking request for {watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : ''} has been submitted successfully.
+                    </p>
                   </div>
-                  <h2 className="text-2xl font-serif text-cream-100 mb-4">Request Received!</h2>
-                  <p className="text-cream-400 mb-8 max-w-md mx-auto">
-                    Thank you, {watchName}. Your booking request for {watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : ''} has been submitted successfully. Our team will review the details and contact you shortly to confirm the reservation and collect the advance.
-                  </p>
-                  <Button to="/dashboard">Go to Dashboard</Button>
+                  
+                  <div className="bg-charcoal-900 border border-white/5 rounded-md p-6 mb-8 shadow-inner">
+                    <h3 className="text-lg font-serif text-gold-400 mb-6 border-b border-white/5 pb-2">What happens next?</h3>
+                    <div className="space-y-6">
+                      <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/20 text-blue-400 font-bold text-sm">1</div>
+                        <div>
+                          <p className="text-cream-200 font-medium mb-1">Review & Approval (Within 2 hours)</p>
+                          <p className="text-cream-400 text-sm">Our team will review your request, confirm availability, and set the final pricing based on your guest count and requirements.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0 border border-yellow-500/20 text-yellow-500 font-bold text-sm">2</div>
+                        <div>
+                          <p className="text-cream-200 font-medium mb-1">Pay Advance (Within 24 hours)</p>
+                          <p className="text-cream-400 text-sm">Once approved, you'll receive an email notification. Log in to your dashboard to pay the advance to secure your date.</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 border border-green-500/20 text-green-400 font-bold text-sm">3</div>
+                        <div>
+                          <p className="text-cream-200 font-medium mb-1">Booking Confirmed</p>
+                          <p className="text-cream-400 text-sm">Your event date is locked in! The remaining balance is due exactly 24 hours prior to your event.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <Button to="/dashboard">Go to Dashboard to Track Status</Button>
+                  </div>
                 </motion.div>
               )}
             </form>

@@ -3,7 +3,7 @@
   <h1>PJ Lawn Official Website</h1>
   <p><strong>Premium Event Venue Booking Platform</strong></p>
   
-  [![Live Demo](https://img.shields.io/badge/Live_Website-pj--lawn--booking--jinsu.netlify.app-D4AF37?style=for-the-badge)](https://pj-lawn-booking-jinsu.netlify.app)
+  [![Live Demo](https://img.shields.io/badge/Live_Website-pjlawn.netlify.app-D4AF37?style=for-the-badge)](https://pjlawn.netlify.app/)
   [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)]()
   [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)]()
   [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)]()

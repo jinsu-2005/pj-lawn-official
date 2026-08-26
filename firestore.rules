@@ -21,10 +21,11 @@ service cloud.firestore {
       // Users can read their own bookings, admins can read all
       allow read: if isOwner(resource.data.userId) || isAdmin();
       
-      // Users can create bookings as pending_review
+      // Users can create bookings as pending_review and unpaid
       allow create: if isAuth() 
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.bookingStatus == "pending_review";
+        && request.resource.data.bookingStatus == "pending_review"
+        && request.resource.data.paymentStatus == "unpaid";
         
       // Only admins can update bookings (to approve/reject and set amounts)
       allow update: if isAdmin();
@@ -37,8 +38,25 @@ service cloud.firestore {
       // Anyone can read date availability
       allow read: if true;
       
-      // Authenticated users can hold dates or admins can manage
-      allow write: if isAuth();
+      // Admins can manage all availability
+      allow write: if isAdmin();
+      
+      // Users can hold a date (create)
+      allow create: if isAuth() 
+        && request.resource.data.status == 'held'
+        && request.resource.data.heldBy == request.auth.uid;
+        
+      // Users can update a hold if it belongs to them or if the hold has expired
+      allow update: if isAuth()
+        && request.resource.data.status == 'held'
+        && request.resource.data.heldBy == request.auth.uid
+        && (
+          resource.data.heldBy == request.auth.uid 
+          || resource.data.heldUntil < request.time
+        );
+        
+      // Users cannot delete availability
+      allow delete: if false;
     }
     
     match /settings/{settingId} {
@@ -52,6 +70,11 @@ service cloud.firestore {
       // Users can check their own admin status
       allow read: if isOwner(adminId);
       // Only admins can modify the registry
+      allow write: if isAdmin();
+    }
+
+    match /gallery/{imageId} {
+      allow read: if true;
       allow write: if isAdmin();
     }
   }

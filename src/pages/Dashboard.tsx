@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, LogOut } from 'lucide-react'
+import { Calendar, LogOut, Copy, Check, CheckCircle2, Clock, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { auth, db } from '@/lib/firebase'
 import { collection, query, where, getDocs } from 'firebase/firestore'
@@ -145,7 +145,35 @@ export default function Dashboard() {
   }
 
   if (loading) {
-    return <div className="pt-32 min-h-screen container mx-auto px-4 flex justify-center text-cream-400">Loading...</div>
+    return (
+      <div className="pt-32 pb-24 min-h-screen bg-charcoal-900">
+        <section className="container mx-auto px-4 mb-8">
+          <div className="bg-charcoal-800 border border-white/5 p-6 rounded-md mb-12 animate-pulse">
+            <div className="h-8 bg-charcoal-700 rounded w-1/4 mb-2"></div>
+            <div className="h-4 bg-charcoal-700 rounded w-1/3"></div>
+          </div>
+          <div className="grid lg:grid-cols-2 gap-8">
+            {[1, 2].map((i) => (
+              <div key={i} className="bg-charcoal-800 border border-white/5 rounded-md p-6 shadow-xl animate-pulse">
+                <div className="flex justify-between mb-4">
+                  <div className="h-6 bg-charcoal-700 rounded w-1/3"></div>
+                  <div className="h-6 bg-charcoal-700 rounded w-1/5"></div>
+                </div>
+                <div className="h-px bg-white/5 w-full mb-4"></div>
+                <div className="space-y-3 mb-6">
+                  <div className="h-4 bg-charcoal-700 rounded w-3/4"></div>
+                  <div className="h-4 bg-charcoal-700 rounded w-1/2"></div>
+                  <div className="h-4 bg-charcoal-700 rounded w-2/3"></div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="h-10 bg-charcoal-700 rounded w-1/3"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    )
   }
 
   return (
@@ -197,8 +225,8 @@ export default function Dashboard() {
               >
                 <div className="p-6 sm:p-8 flex flex-col md:flex-row justify-between gap-6">
                   
-                  <div className="flex-1 space-y-4">
-                    <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-6">
                       <div>
                         <div className="text-xs text-gold-400 uppercase tracking-widest mb-1">{booking.eventType}</div>
                         <h3 className="text-xl font-serif text-cream-100">
@@ -208,78 +236,95 @@ export default function Dashboard() {
                       <StatusBadge status={booking.bookingStatus} />
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <BookingTimeline status={booking.bookingStatus} />
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm bg-charcoal-900/50 p-4 rounded-md border border-white/5 mb-2">
                       <div>
-                        <span className="text-cream-400 block mb-1">Guest Count</span>
+                        <span className="text-cream-400 block mb-1 text-xs uppercase tracking-wider">Guest Count</span>
                         <span className="text-cream-200 font-medium">{booking.guestCount} Guests</span>
                       </div>
                       <div>
-                        <span className="text-cream-400 block mb-1">Booking ID</span>
-                        <span className="text-cream-200 font-medium font-mono text-xs">{booking.id}</span>
+                        <span className="text-cream-400 block mb-1 text-xs uppercase tracking-wider">Booking ID</span>
+                        <div className="flex items-center text-cream-200 font-medium font-mono text-xs">
+                          {booking.id}
+                          <CopyButton text={booking.id} />
+                        </div>
                       </div>
+                    </div>
+
+                    <BookingStatusMessage booking={booking} />
+
+                    <div className="text-[10px] text-cream-400/50 mt-6 leading-relaxed">
+                      * Cancellations made 7 days prior to the event will receive a full refund of the advance amount. Cancellations within 7 days are non-refundable. Please review our full terms and conditions.
                     </div>
                   </div>
 
-                  <div className="md:w-64 bg-charcoal-900 border border-white/5 p-4 rounded-md">
-                    <div className="mb-4 pb-4 border-b border-white/5">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-cream-400 text-xs uppercase tracking-wider">Total</span>
-                        <span className="text-cream-100 font-medium">₹{(booking.totalAmount || booking.estimatedAmount || 0).toLocaleString()}</span>
+                  <div className="md:w-64 bg-charcoal-900 border border-white/5 p-5 rounded-lg flex flex-col justify-between shadow-inner">
+                    <div>
+                      <h4 className="text-sm font-serif text-cream-100 mb-3 border-b border-white/5 pb-2">Payment Details</h4>
+                      
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-cream-400">Total</span>
+                          <span className="text-cream-200">₹{(booking.totalAmount || booking.estimatedAmount || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-cream-400">Paid</span>
+                          <span className="text-green-400">₹{(booking.amountPaid || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm font-medium pt-2 border-t border-white/5">
+                          <span className="text-cream-100">Due Now</span>
+                          <span className="text-gold-400">
+                            {booking.bookingStatus === 'awaiting_payment' 
+                              ? `₹${(booking.advanceAmount || 5000).toLocaleString()}` 
+                              : `₹${Math.max(0, (booking.totalAmount || booking.estimatedAmount || 0) - (booking.amountPaid || 0)).toLocaleString()}`
+                            }
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-cream-400 text-xs uppercase tracking-wider">Paid</span>
-                        <span className="text-gold-400 font-medium">₹{(booking.amountPaid || 0).toLocaleString()}</span>
+
+                      <div className="w-full bg-charcoal-800 rounded-full h-1.5 mb-5 overflow-hidden border border-white/5 shadow-inner">
+                        <div 
+                          className="bg-gold-400 h-1.5 rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(212,175,55,0.8)]" 
+                          style={{ width: `${Math.min(100, ((booking.amountPaid || 0) / (booking.totalAmount || booking.estimatedAmount || 1)) * 100)}%` }}
+                        ></div>
                       </div>
                     </div>
-                    
-                    {['confirmed', 'completed'].includes(booking.bookingStatus) && (
-                      <div className="mt-4">
-                        <DownloadReceiptButton 
-                          booking={booking} 
-                          className="w-full flex items-center justify-center gap-2 bg-gold-500 text-charcoal-900 px-4 py-2 rounded-sm text-sm font-medium hover:bg-gold-400 transition-colors"
-                        />
-                      </div>
-                    )}
 
-                    {booking.bookingStatus === 'awaiting_payment' && (
-                      <div className="mt-4 space-y-2">
+                    <div className="mt-auto space-y-3">
+                      {booking.bookingStatus === 'awaiting_payment' && (
                         <Button 
-                          className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs py-2" 
+                          className="w-full bg-gold-400 hover:bg-gold-300 text-black font-black text-sm py-2 shadow-[0_0_15px_rgba(212,175,55,0.4)]" 
                           onClick={() => handlePayment(booking, 'advance')}
                           disabled={payingBookingId === booking.id}
                         >
-                          {payingBookingId === booking.id ? 'Processing...' : `Pay Advance (₹${booking.advanceAmount?.toLocaleString()})`}
+                          {payingBookingId === booking.id ? 'Processing...' : 'Pay Advance'}
                         </Button>
+                      )}
+
+                      {booking.bookingStatus === 'confirmed' && booking.paymentStatus === 'advance_paid' && ((booking.totalAmount || 0) - (booking.amountPaid || 0) > 0) && (
                         <Button 
-                          className="w-full bg-gold-500 hover:bg-gold-400 text-charcoal-900 text-xs py-2" 
-                          onClick={() => handlePayment(booking, 'full')}
+                          className="w-full bg-gold-400 hover:bg-gold-300 text-black font-black text-sm py-2 shadow-[0_0_15px_rgba(212,175,55,0.4)]" 
+                          onClick={() => handlePayment(booking, 'remaining')}
                           disabled={payingBookingId === booking.id}
                         >
-                          {payingBookingId === booking.id ? 'Processing...' : `Pay Full (₹${booking.totalAmount?.toLocaleString()})`}
+                          {payingBookingId === booking.id ? 'Processing...' : 'Pay Balance'}
                         </Button>
-                      </div>
-                    )}
+                      )}
 
-                    {booking.bookingStatus === 'confirmed' && booking.paymentStatus === 'advance_paid' && (
-                      (() => {
-                        const remaining = (booking.totalAmount || 0) - (booking.amountPaid || 0);
-                        return remaining > 0 ? (
-                          <div className="mt-4">
-                            <Button 
-                              className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs py-2" 
-                              onClick={() => handlePayment(booking, 'remaining')}
-                              disabled={payingBookingId === booking.id}
-                            >
-                              {payingBookingId === booking.id ? 'Processing...' : `Pay Balance (₹${remaining.toLocaleString()})`}
-                            </Button>
-                          </div>
-                        ) : null;
-                      })()
-                    )}
+                      {['confirmed', 'completed'].includes(booking.bookingStatus) && (
+                        <DownloadReceiptButton 
+                          booking={booking} 
+                          className="w-full flex items-center justify-center gap-2 bg-charcoal-800 border border-white/10 text-cream-200 hover:text-white px-4 py-2 rounded-md text-sm hover:bg-charcoal-700 transition-colors"
+                        />
+                      )}
 
-                    {booking.bookingStatus === 'pending_review' && (
-                      <p className="text-xs text-cream-400 text-center">Awaiting owner review.</p>
-                    )}
+                      {booking.bookingStatus === 'pending_review' && (
+                        <div className="bg-blue-500/10 text-blue-400 text-xs font-medium text-center py-2.5 rounded-md border border-blue-500/20">
+                          Awaiting Review
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                 </div>
@@ -310,4 +355,115 @@ function StatusBadge({ status }: { status: string }) {
       {current.label}
     </span>
   )
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+  return (
+    <button onClick={handleCopy} className="ml-2 text-cream-400 hover:text-gold-400 transition-colors" title="Copy ID">
+      {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+    </button>
+  )
+}
+
+function BookingTimeline({ status }: { status: string }) {
+  const steps = [
+    { id: 'pending_review', label: 'Pending' },
+    { id: 'awaiting_payment', label: 'Approved' },
+    { id: 'confirmed', label: 'Confirmed' }
+  ]
+  
+  let currentStepIndex = 0;
+  if (status === 'awaiting_payment') currentStepIndex = 1;
+  if (status === 'confirmed' || status === 'completed') currentStepIndex = 2;
+
+  if (status === 'rejected') {
+    return (
+      <div className="flex items-center text-red-400 gap-2 mb-6">
+        <XCircle className="w-5 h-5" />
+        <span className="text-sm font-medium">Booking Rejected</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center w-full max-w-sm mb-6 mt-4">
+      {steps.map((step, index) => {
+        const isCompleted = index <= currentStepIndex;
+        const isCurrent = index === currentStepIndex;
+        return (
+          <div key={step.id} className="flex items-center flex-1 last:flex-none">
+            <div className="flex flex-col items-center relative">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 z-10 
+                ${isCompleted ? 'bg-gold-400 border-gold-400 text-black' : 'bg-charcoal-800 border-white/20 text-cream-400/50'}`}>
+                {isCompleted ? <Check className="w-3.5 h-3.5" /> : <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+              </div>
+              <span className={`absolute top-8 text-[10px] uppercase tracking-widest whitespace-nowrap font-medium
+                ${isCurrent ? 'text-gold-400' : isCompleted ? 'text-cream-200' : 'text-cream-400/50'}`}>
+                {step.label}
+              </span>
+            </div>
+            {index < steps.length - 1 && (
+              <div className={`flex-1 h-0.5 mx-2 ${index < currentStepIndex ? 'bg-gold-400' : 'bg-white/10'}`} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function BookingStatusMessage({ booking }: { booking: any }) {
+  if (booking.bookingStatus === 'rejected') {
+    return (
+      <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-md mt-6">
+        <p className="text-red-400 text-sm font-medium mb-1">Booking Declined</p>
+        <p className="text-cream-400 text-xs">
+          {booking.rejectionReason 
+            ? `Reason: ${booking.rejectionReason}` 
+            : "Unfortunately, we cannot accommodate your request for this date. Please try selecting another date."}
+        </p>
+        <Button to="/book" variant="outline" size="sm" className="mt-3">Try Another Date</Button>
+      </div>
+    )
+  }
+  if (booking.bookingStatus === 'pending_review') {
+    return (
+      <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-md mt-8 flex gap-3 items-start">
+        <Clock className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-blue-400 text-sm font-medium mb-1">Under Review</p>
+          <p className="text-cream-400 text-xs">Our team is reviewing your request. You will receive an email shortly with approval and pricing details.</p>
+        </div>
+      </div>
+    )
+  }
+  if (booking.bookingStatus === 'awaiting_payment') {
+    return (
+      <div className="bg-gold-400/10 border border-gold-400/20 p-4 rounded-md mt-8 flex gap-3 items-start">
+        <CheckCircle2 className="w-5 h-5 text-gold-400 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-gold-400 text-sm font-medium mb-1">Booking Approved!</p>
+          <p className="text-cream-400 text-xs">Please pay the due amount within 24 hours to secure your date.</p>
+        </div>
+      </div>
+    )
+  }
+  if (booking.bookingStatus === 'confirmed') {
+    return (
+      <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-md mt-8 flex gap-3 items-start">
+        <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-green-400 text-sm font-medium mb-1">Booking Confirmed</p>
+          <p className="text-cream-400 text-xs">Your event is confirmed. You can pay any remaining balance in the payment details section.</p>
+        </div>
+      </div>
+    )
+  }
+  return null;
 }

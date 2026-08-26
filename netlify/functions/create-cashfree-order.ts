@@ -89,7 +89,7 @@ export const handler: Handler = async (event, context) => {
     cashfree.XApiVersion = "2025-01-01";
 
     const orderId = `order_${bookingId}_${paymentType}_${Date.now()}`;
-    const returnUrl = `${process.env.URL || 'http://localhost:5173'}/dashboard`;
+    const returnUrl = `${process.env.URL || 'https://pjlawn.netlify.app'}/dashboard`;
 
     const request = {
       order_amount: orderAmount,
