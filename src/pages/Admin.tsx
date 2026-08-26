@@ -251,6 +251,10 @@ function ChatbotManager({ setNotification }: { setNotification: (n: any) => void
         if (snap.exists()) {
           setPrompt(snap.data().systemPrompt || '')
           setBusinessData(snap.data().businessData || '')
+        } else {
+          // Fallback to default if not seeded yet
+          setPrompt(`You are the official AI assistant for PJ Lawn, a premium open-air event venue located in Nagercoil, Tamil Nadu.\nYour tone should be polite, welcoming, professional, and helpful. You answer questions concisely. If the user asks about booking, guide them to use the "Book Venue" page on the website.\nDo not make up any facts or pricing that are not explicitly provided in the business context.`)
+          setBusinessData(`- Name: PJ Lawn\n- Location: Nagercoil, Kanyakumari District, Tamil Nadu, India.\n- Type: Premium Open-Air Event Venue\n- Best suited for: Weddings, Receptions, Corporate Events, Birthday Parties, and Family Gatherings.\n- Capacity: Hosts up to 1000+ guests.\n- Amenities: Spacious lawn, ample parking, premium lighting, dedicated dining area, modern restroom facilities.\n- Contact: Users can reach out via the Contact Form on the website or email directly.\n- Pricing: Pricing is dynamic based on the season and event size. Advise users to submit a booking inquiry for an exact quote.`)
         }
       } catch (err) {
         console.error(err)
