@@ -61,7 +61,13 @@ export default function Admin() {
   const activeBookings = bookings.filter(b => ['awaiting_payment', 'confirmed', 'completed'].includes(b.bookingStatus))
 
   return (
-    <div className="pt-24 pb-24 min-h-screen bg-charcoal-900 flex flex-col md:flex-row relative">
+    <div className="pt-20 pb-24 min-h-screen bg-charcoal-900 relative">
+      {/* Admin-only notice banner */}
+      <div className="bg-gold-500/10 border-b border-gold-500/20 px-4 py-2 text-center">
+        <p className="text-xs text-gold-400/80 tracking-wide">
+          🔒 This Admin Panel is only visible to authorized administrators. Customers cannot see or access this page.
+        </p>
+      </div>
       {/* Toast Notification */}
       {notification && (
         <div className="fixed top-24 right-4 z-50 max-w-sm w-full bg-charcoal-800 border-l-4 border-gold-500 shadow-2xl p-4 flex items-start gap-3 rounded-r-md animate-fade-in">
@@ -77,32 +83,52 @@ export default function Admin() {
         </div>
       )}
 
-      {/* Sidebar Nav */}
-      <div className="w-full md:w-64 bg-charcoal-800 border-r border-white/5 p-6 flex flex-col min-h-[calc(100vh-6rem)]">
-        <div className="mb-10">
-          <h2 className="text-xl font-serif text-cream-100">Admin Panel</h2>
-          <p className="text-xs text-cream-400 mt-1">{user?.email}</p>
-        </div>
-        
-        <nav className="space-y-2 flex-1">
-          <NavButton icon={<BarChart3 size={18}/>} label="Overview" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
-          <NavButton icon={<Inbox size={18}/>} label={`Queue (${pendingBookings.length})`} active={activeTab === 'queue'} onClick={() => setActiveTab('queue')} />
-          <NavButton icon={<Calendar size={18}/>} label="Calendar & Active" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
-          <NavButton icon={<IndianRupee size={18}/>} label="Pricing Config" active={activeTab === 'pricing'} onClick={() => setActiveTab('pricing')} />
-          <NavButton icon={<ImageIcon size={18}/>} label="Gallery Manager" active={activeTab === 'gallery'} onClick={() => setActiveTab('gallery')} />
-          <NavButton icon={<Bot size={18}/>} label="Chatbot AI" active={activeTab === 'chatbot'} onClick={() => setActiveTab('chatbot')} />
-          <NavButton icon={<Users size={18}/>} label="Admin Settings" active={activeTab === 'admins'} onClick={() => setActiveTab('admins')} />
-        </nav>
+      <div className="flex flex-col md:flex-row">
+        {/* Sidebar — vertical on desktop, horizontal scroll on mobile */}
+        <div className="w-full md:w-64 bg-charcoal-800 border-b md:border-b-0 md:border-r border-white/5 md:min-h-[calc(100vh-8rem)] flex-shrink-0">
+          {/* Header — desktop only */}
+          <div className="hidden md:block p-6 mb-4">
+            <h2 className="text-xl font-serif text-cream-100">Admin Panel</h2>
+            <p className="text-xs text-cream-400 mt-1">{user?.email}</p>
+          </div>
 
-        <div className="mt-auto pt-6 border-t border-white/5">
-          <button onClick={handleSignOut} className="flex items-center gap-3 text-cream-400 hover:text-red-400 text-sm transition-colors w-full p-2">
-            <LogOut size={18} /> Sign Out
-          </button>
-        </div>
-      </div>
+          {/* Mobile: horizontal scrollable tab row */}
+          <div className="flex md:hidden overflow-x-auto scrollbar-hide px-3 py-2 gap-1 border-t border-white/5">
+            <MobileTab icon={<BarChart3 size={14}/>} label="Overview" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
+            <MobileTab icon={<Inbox size={14}/>} label={`Queue (${pendingBookings.length})`} active={activeTab === 'queue'} onClick={() => setActiveTab('queue')} />
+            <MobileTab icon={<Calendar size={14}/>} label="Calendar" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
+            <MobileTab icon={<IndianRupee size={14}/>} label="Pricing" active={activeTab === 'pricing'} onClick={() => setActiveTab('pricing')} />
+            <MobileTab icon={<ImageIcon size={14}/>} label="Gallery" active={activeTab === 'gallery'} onClick={() => setActiveTab('gallery')} />
+            <MobileTab icon={<Bot size={14}/>} label="Chatbot" active={activeTab === 'chatbot'} onClick={() => setActiveTab('chatbot')} />
+            <MobileTab icon={<Users size={14}/>} label="Admins" active={activeTab === 'admins'} onClick={() => setActiveTab('admins')} />
+          </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 p-6 sm:p-10">
+          {/* Desktop: vertical nav */}
+          <nav className="hidden md:flex flex-col space-y-2 px-4">
+            <NavButton icon={<BarChart3 size={18}/>} label="Overview" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
+            <NavButton icon={<Inbox size={18}/>} label={`Queue (${pendingBookings.length})`} active={activeTab === 'queue'} onClick={() => setActiveTab('queue')} />
+            <NavButton icon={<Calendar size={18}/>} label="Calendar & Active" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
+            <NavButton icon={<IndianRupee size={18}/>} label="Pricing Config" active={activeTab === 'pricing'} onClick={() => setActiveTab('pricing')} />
+            <NavButton icon={<ImageIcon size={18}/>} label="Gallery Manager" active={activeTab === 'gallery'} onClick={() => setActiveTab('gallery')} />
+            <NavButton icon={<Bot size={18}/>} label="Chatbot AI" active={activeTab === 'chatbot'} onClick={() => setActiveTab('chatbot')} />
+            <NavButton icon={<Users size={18}/>} label="Admin Settings" active={activeTab === 'admins'} onClick={() => setActiveTab('admins')} />
+          </nav>
+
+          <div className="hidden md:block mt-auto p-4 border-t border-white/5 mx-4 mt-6">
+            <button onClick={handleSignOut} className="flex items-center gap-3 text-cream-400 hover:text-red-400 text-sm transition-colors w-full p-2">
+              <LogOut size={18} /> Sign Out
+            </button>
+          </div>
+        </div>
+        {/* Main Content Area */}
+        <div className="flex-1 p-4 sm:p-6 md:p-10 overflow-x-hidden">
+          {/* Mobile sign-out */}
+          <div className="md:hidden flex items-center justify-between mb-4">
+            <p className="text-xs text-cream-400 truncate">{user?.email}</p>
+            <button onClick={handleSignOut} className="flex items-center gap-2 text-red-400 text-xs">
+              <LogOut size={14} /> Sign Out
+            </button>
+          </div>
         
         {activeTab === 'overview' && (
           <OverviewView bookings={bookings} />
@@ -132,6 +158,7 @@ export default function Admin() {
           <AdminManagerView setNotification={setNotification} currentUserEmail={user?.email || ''} />
         )}
         
+        </div>
       </div>
     </div>
   )
@@ -353,6 +380,19 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm transition-colors ${
         active ? 'bg-gold-500/10 text-gold-400' : 'text-cream-400 hover:bg-white/5 hover:text-cream-200'
+      }`}
+    >
+      {icon} {label}
+    </button>
+  )
+}
+
+function MobileTab({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+        active ? 'bg-gold-500/15 text-gold-400 border border-gold-500/30' : 'text-cream-400 hover:bg-white/5 hover:text-cream-200'
       }`}
     >
       {icon} {label}

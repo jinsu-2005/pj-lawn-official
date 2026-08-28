@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, ChevronDown, LayoutDashboard, Shield, LogOut as LogOutIcon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -25,10 +25,12 @@ const navLinks = [
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -64,6 +66,19 @@ export default function Navbar() {
     return () => unsubscribe()
   }, [])
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const avatarLetter = (user?.displayName || user?.email || 'U')[0].toUpperCase()
+
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider)
@@ -90,6 +105,7 @@ export default function Navbar() {
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false)
+    setIsDropdownOpen(false)
   }, [location.pathname])
 
   // Lock body scroll when mobile menu is open
@@ -128,7 +144,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -142,33 +158,56 @@ export default function Navbar() {
               </Link>
             ))}
             {user ? (
-              <div className="flex items-center space-x-4">
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    className={cn(
-                      'text-sm tracking-wide transition-colors text-gold-400 hover:text-gold-300 font-bold',
-                      location.pathname === '/admin' ? 'underline decoration-gold-400 underline-offset-4' : ''
-                    )}
-                  >
-                    Admin Panel
-                  </Link>
-                )}
-                <Link
-                  to="/dashboard"
-                  className={cn(
-                    'text-sm tracking-wide transition-colors hover:text-gold-400',
-                    location.pathname === '/dashboard' ? 'text-gold-400 font-medium' : 'text-cream-200'
-                  )}
-                >
-                  Dashboard
-                </Link>
+              /* Compact avatar dropdown — keeps navbar clean for admins */
+              <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={handleLogout}
-                  className="text-sm tracking-wide text-cream-200 hover:text-red-400 transition-colors"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-charcoal-800 border border-gold-500/30 hover:border-gold-500/60 transition-all"
                 >
-                  Logout
+                  <div className="w-6 h-6 rounded-full bg-gold-500/20 border border-gold-500/50 flex items-center justify-center text-gold-400 text-xs font-bold">
+                    {avatarLetter}
+                  </div>
+                  <ChevronDown size={14} className={cn('text-cream-400 transition-transform duration-200', isDropdownOpen ? 'rotate-180' : '')} />
                 </button>
+
+                <AnimatePresence>
+                  {isDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-52 bg-charcoal-800 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+                    >
+                      <div className="px-4 py-3 border-b border-white/5">
+                        <p className="text-xs text-cream-400 truncate">{user.email}</p>
+                      </div>
+
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          className="flex items-center gap-3 px-4 py-3 text-sm text-gold-400 hover:bg-white/5 transition-colors font-medium"
+                        >
+                          <Shield size={15} /> Admin Panel
+                        </Link>
+                      )}
+
+                      <Link
+                        to="/dashboard"
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-cream-200 hover:bg-white/5 transition-colors"
+                      >
+                        <LayoutDashboard size={15} /> My Dashboard
+                      </Link>
+
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-white/5"
+                      >
+                        <LogOutIcon size={15} /> Sign Out
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ) : (
               <button
@@ -206,31 +245,29 @@ export default function Navbar() {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="md:hidden fixed inset-0 top-0 left-0 right-0 bottom-0 min-h-screen w-full bg-charcoal-950/95 backdrop-blur-2xl z-40 flex flex-col justify-between pt-24 pb-8 px-6 overflow-y-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden fixed inset-0 w-full h-full bg-charcoal-950 z-40 flex flex-col pt-20 pb-8 px-6 overflow-y-auto"
           >
-            {/* Nav Links */}
-            <nav className="flex flex-col space-y-2 py-4">
+            {/* Nav Links with dividers */}
+            <nav className="flex flex-col divide-y divide-white/5">
               {navLinks.map((link, idx) => {
                 const isActive = location.pathname === link.path
                 return (
                   <motion.div
                     key={link.path}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.04, duration: 0.3 }}
+                    transition={{ delay: idx * 0.04, duration: 0.25 }}
                   >
                     <Link
                       to={link.path}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={cn(
-                        'flex items-center justify-between text-2xl font-serif py-2.5 transition-all',
-                        isActive
-                          ? 'text-gold-400 font-bold pl-2 border-l-2 border-gold-400'
-                          : 'text-cream-200 hover:text-gold-300 hover:pl-2'
+                        'flex items-center justify-between py-4 text-xl font-serif transition-all',
+                        isActive ? 'text-gold-400 font-bold' : 'text-cream-200'
                       )}
                     >
                       <span>{link.name}</span>
@@ -246,48 +283,42 @@ export default function Navbar() {
                 <>
                   {isAdmin && (
                     <motion.div
-                      initial={{ opacity: 0, x: -20 }}
+                      initial={{ opacity: 0, x: -16 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: navLinks.length * 0.04, duration: 0.3 }}
+                      transition={{ delay: navLinks.length * 0.04, duration: 0.25 }}
                     >
                       <Link
                         to="/admin"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className={cn(
-                          'flex items-center justify-between text-2xl font-serif py-2.5 transition-all text-gold-400 font-bold',
-                          location.pathname === '/admin'
-                            ? 'pl-2 border-l-2 border-gold-400'
-                            : 'hover:text-gold-300 hover:pl-2'
-                        )}
+                        className="flex items-center justify-between py-4 text-xl font-serif text-gold-400 font-bold transition-all"
                       >
                         <span>Admin Panel</span>
+                        <Shield size={16} className="text-gold-400/60" />
                       </Link>
                     </motion.div>
                   )}
                   <motion.div
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: (navLinks.length + (isAdmin ? 1 : 0)) * 0.04, duration: 0.3 }}
+                    transition={{ delay: (navLinks.length + (isAdmin ? 1 : 0)) * 0.04, duration: 0.25 }}
                   >
                     <Link
                       to="/dashboard"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={cn(
-                        'flex items-center justify-between text-2xl font-serif py-2.5 transition-all',
-                        location.pathname === '/dashboard'
-                          ? 'text-gold-400 font-bold pl-2 border-l-2 border-gold-400'
-                          : 'text-cream-200 hover:text-gold-300 hover:pl-2'
+                        'flex items-center justify-between py-4 text-xl font-serif transition-all',
+                        location.pathname === '/dashboard' ? 'text-gold-400 font-bold' : 'text-cream-200'
                       )}
                     >
-                      <span>Dashboard</span>
+                      <span>My Dashboard</span>
                     </Link>
                   </motion.div>
                 </>
               )}
             </nav>
 
-            {/* Bottom Actions */}
-            <div className="pt-6 border-t border-white/10 space-y-3">
+            {/* Bottom CTA */}
+            <div className="mt-auto pt-6 space-y-3">
               <Link
                 to="/book"
                 onClick={() => setIsMobileMenuOpen(false)}

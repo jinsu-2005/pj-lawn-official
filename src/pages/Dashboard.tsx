@@ -174,12 +174,12 @@ export default function Dashboard() {
       )}
 
       <section className="container mx-auto px-4 mb-8">
-        <div className="flex flex-col md:flex-row justify-between items-center bg-charcoal-800 border border-white/5 p-6 rounded-md mb-12">
+        <div className="flex flex-col gap-4 bg-charcoal-800 border border-white/5 p-5 sm:p-6 rounded-md mb-8 sm:mb-12">
           <div>
-            <h1 className="text-2xl font-serif text-cream-100 mb-1">Welcome, {user?.displayName || 'Guest'}</h1>
+            <h1 className="text-xl sm:text-2xl font-serif text-cream-100 mb-1">Welcome, {user?.displayName || 'Guest'}</h1>
             <p className="text-cream-400 text-sm">{user?.email}</p>
           </div>
-          <div className="mt-4 md:mt-0 flex gap-4">
+          <div className="flex gap-3 flex-wrap">
             <Button to="/book" variant="outline">New Booking</Button>
             <Button variant="ghost" onClick={handleSignOut} className="text-cream-400 hover:text-red-400">
               <LogOut className="w-4 h-4 mr-2" /> Sign Out
