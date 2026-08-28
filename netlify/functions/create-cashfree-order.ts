@@ -52,61 +52,81 @@ export const handler: Handler = async (event, context) => {
       console.warn("Firebase Admin not configured, skipping auth check");
     }
 
-    const { bookingId, paymentType = 'advance' } = JSON.parse(event.body || '{}');
+    const bodyData = JSON.parse(event.body || '{}');
+    const { bookingId, paymentType = 'advance' } = bodyData;
     if (!bookingId) {
       return { statusCode: 400, body: JSON.stringify({ error: 'bookingId required' }) };
     }
 
-    let orderAmount = 5000;
-    let customerPhone = "9999999999";
+    let orderAmount = bodyData.amount || 5000;
+    let customerPhone = bodyData.customerPhone || "9876543210";
     let customerId = "guest";
-    let customerEmail = "guest@example.com";
-    let customerName = "Guest";
+    let customerEmail = bodyData.customerEmail || "customer@pjlawn.com";
+    let customerName = bodyData.customerName || "Valued Customer";
 
     // Fetch booking details from Firestore if Admin is initialized
     if (getApps().length > 0) {
       const db = getFirestore();
       const bookingSnap = await db.collection('bookings').doc(bookingId).get();
-      if (!bookingSnap.exists) {
-        return { statusCode: 404, body: JSON.stringify({ error: 'Booking not found' }) };
-      }
-      
-      const bookingData = bookingSnap.data()!;
-      const isPayable = bookingData.bookingStatus === 'awaiting_payment' || 
-                        (bookingData.bookingStatus === 'confirmed' && bookingData.paymentStatus === 'advance_paid');
-      
-      if (!isPayable) {
-        return { statusCode: 400, body: JSON.stringify({ error: 'Booking is not in a payable state' }) };
-      }
-      
-      if (paymentType === 'full') {
-        orderAmount = bookingData.totalAmount || bookingData.estimatedAmount || 5000;
-      } else if (paymentType === 'remaining') {
-        const alreadyPaid = bookingData.amountPaid || bookingData.advanceAmount || 5000;
-        orderAmount = (bookingData.totalAmount || bookingData.estimatedAmount || 5000) - alreadyPaid;
-      } else {
-        // default to 'advance'
-        orderAmount = bookingData.advanceAmount || 5000;
-      }
+      if (bookingSnap.exists) {
+        const bookingData = bookingSnap.data()!;
+        
+        // Allow all active/unpaid states to proceed to checkout
+        const isCancelled = bookingData.bookingStatus === 'cancelled' || bookingData.bookingStatus === 'rejected';
+        if (isCancelled) {
+          return { statusCode: 400, body: JSON.stringify({ error: 'This booking has been cancelled and cannot be paid.' }) };
+        }
+        
+        if (paymentType === 'full') {
+          orderAmount = bookingData.totalAmount || bookingData.estimatedAmount || orderAmount;
+        } else if (paymentType === 'remaining') {
+          const alreadyPaid = bookingData.amountPaid || bookingData.advanceAmount || 5000;
+          orderAmount = (bookingData.totalAmount || bookingData.estimatedAmount || 5000) - alreadyPaid;
+        } else {
+          // default to 'advance'
+          orderAmount = bookingData.advanceAmount || 5000;
+        }
 
-      if (orderAmount <= 0) {
-        return { statusCode: 400, body: JSON.stringify({ error: 'Order amount must be greater than zero' }) };
+        customerPhone = bookingData.userPhone || bookingData.phone || customerPhone;
+        customerId = bookingData.userId || bookingId;
+        customerName = bookingData.userName || bookingData.name || customerName;
+        customerEmail = bookingData.userEmail || bookingData.email || customerEmail;
       }
-
-      customerPhone = bookingData.userPhone || bookingData.phone || "9999999999";
-      customerId = bookingData.userId || "guest";
-      customerName = bookingData.userName || bookingData.name || "Guest";
-      customerEmail = `${customerId}@pjlawn.local`; 
     }
+
+    // Ensure positive integer amount
+    orderAmount = Math.max(1, Math.round(orderAmount));
+
+    // Sanitize customer details for Cashfree API requirements
+    let phoneDigits = customerPhone.replace(/\D/g, '');
+    if (phoneDigits.length < 10) phoneDigits = "9876543210";
+    if (phoneDigits.length > 10) phoneDigits = phoneDigits.slice(-10);
+
+    let validEmail = customerEmail;
+    if (!validEmail || !validEmail.includes('@') || validEmail.includes('.local')) {
+      validEmail = "customer@pjlawn.com";
+    }
+
+    const cleanCustomerId = (customerId || "guest").replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 45) || 'cust_guest';
 
     // Initialize Cashfree SDK
     const env = process.env.CASHFREE_ENV === 'production' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
-    const cashfree = new Cashfree(env, process.env.CASHFREE_APP_ID || '', process.env.CASHFREE_SECRET_KEY || '');
-    
-    // Pin to published v5 API version
+    const appId = process.env.CASHFREE_APP_ID || '';
+    const secretKey = process.env.CASHFREE_SECRET_KEY || '';
+
+    if (!appId || !secretKey) {
+      console.error("Missing CASHFREE_APP_ID or CASHFREE_SECRET_KEY");
+      return {
+        statusCode: 500,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Payment gateway configuration missing. Please check CASHFREE_APP_ID and CASHFREE_SECRET_KEY in Netlify settings.' })
+      };
+    }
+
+    const cashfree = new Cashfree(env, appId, secretKey);
     cashfree.XApiVersion = "2025-01-01";
 
-    const orderId = `order_${bookingId}_${paymentType}_${Date.now()}`;
+    const orderId = `order_${bookingId.substring(0, 20)}_${paymentType}_${Date.now()}`;
     const returnUrl = `${process.env.URL || 'https://pjlawn.netlify.app'}/dashboard?order_id={order_id}`;
 
     const request = {
@@ -114,10 +134,10 @@ export const handler: Handler = async (event, context) => {
       order_currency: "INR",
       order_id: orderId,
       customer_details: {
-        customer_id: customerId.substring(0, 50), // CF limit
-        customer_phone: customerPhone.replace(/\D/g, '').substring(0, 10), // Ensure 10 digits
-        customer_email: customerEmail,
-        customer_name: customerName
+        customer_id: cleanCustomerId,
+        customer_phone: phoneDigits,
+        customer_email: validEmail,
+        customer_name: customerName.substring(0, 50)
       },
       order_meta: {
         return_url: returnUrl
@@ -128,13 +148,18 @@ export const handler: Handler = async (event, context) => {
     
     // Save the active order_id to the booking for reference
     if (getApps().length > 0) {
-      await getFirestore().collection('bookings').doc(bookingId).update({
-        cashfreeOrderId: orderId
-      });
+      try {
+        await getFirestore().collection('bookings').doc(bookingId).update({
+          cashfreeOrderId: orderId
+        });
+      } catch (e) {
+        console.warn("Could not attach cashfreeOrderId to booking doc", e);
+      }
     }
 
     return {
       statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         payment_session_id: response.data.payment_session_id,
         order_id: orderId,
@@ -142,10 +167,12 @@ export const handler: Handler = async (event, context) => {
       })
     };
   } catch (error: any) {
+    const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Internal Server Error';
     console.error("Error creating Cashfree order:", error.response?.data || error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message || 'Internal Server Error' })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: errorMsg })
     };
   }
 };
