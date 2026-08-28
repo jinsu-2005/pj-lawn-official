@@ -80,16 +80,33 @@ export const handler: Handler = async (event, context) => {
     }
 
     const env = process.env.CASHFREE_ENV === 'production' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
-    const cashfree = new Cashfree(env, process.env.CASHFREE_APP_ID || '', process.env.CASHFREE_SECRET_KEY || '');
-    cashfree.XApiVersion = "2025-01-01";
+    const appId = process.env.CASHFREE_APP_ID || '';
+    const secretKeysToTry = [
+      process.env.CASHFREE_WEBHOOK_SECRET,
+      process.env.CASHFREE_SECRET_KEY,
+    ].filter(Boolean) as string[];
 
-    // Verify Signature for real incoming event payloads
-    try {
-      if (signature && timestamp && process.env.CASHFREE_SECRET_KEY) {
-        cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
+    // Verify Signature for incoming event payloads
+    let signatureVerified = false;
+    let lastError: any = null;
+
+    if (signature && timestamp && secretKeysToTry.length > 0) {
+      for (const secret of secretKeysToTry) {
+        try {
+          const cf = new Cashfree(env, appId, secret);
+          cf.PGVerifyWebhookSignature(signature, rawBody, timestamp);
+          signatureVerified = true;
+          break;
+        } catch (err) {
+          lastError = err;
+        }
       }
-    } catch (err) {
-      console.warn("Webhook signature verification warning:", err);
+    } else if (!signature && !timestamp) {
+      signatureVerified = true;
+    }
+
+    if (!signatureVerified && signature) {
+      console.warn("Webhook signature verification warning:", lastError);
       // If it's a test event from the dashboard, acknowledge with 200
       try {
         const testPayload = JSON.parse(rawBody);
@@ -99,6 +116,9 @@ export const handler: Handler = async (event, context) => {
       } catch {}
       return { statusCode: 400, body: "Invalid signature" };
     }
+
+    const cashfree = new Cashfree(env, appId, process.env.CASHFREE_SECRET_KEY || secretKeysToTry[0] || '');
+    cashfree.XApiVersion = "2025-01-01";
 
     let payload: any = {};
     try {
