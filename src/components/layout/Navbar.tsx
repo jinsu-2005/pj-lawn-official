@@ -4,8 +4,9 @@ import { Menu, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { auth, googleProvider } from '@/lib/firebase'
+import { auth, googleProvider, db } from '@/lib/firebase'
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -25,12 +26,40 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser)
+      if (currentUser) {
+        try {
+          const docRef = doc(db, 'admins', currentUser.uid)
+          const docSnap = await getDoc(docRef)
+          
+          let isInvited = false
+          if (currentUser.email) {
+            const inviteRef = doc(db, 'admin_invites', currentUser.email.toLowerCase().trim())
+            const inviteSnap = await getDoc(inviteRef)
+            if (inviteSnap.exists()) {
+              isInvited = true
+            }
+          }
+
+          const isSuperAdmin = currentUser.email && [
+            'jinsu.j2005@gmail.com',
+            'jinsukapgreen@gmail.com'
+          ].includes(currentUser.email.toLowerCase().trim())
+
+          setIsAdmin(!!docSnap.exists() || isInvited || !!isSuperAdmin)
+        } catch (e) {
+          console.error("Navbar admin check failed", e)
+          setIsAdmin(false)
+        }
+      } else {
+        setIsAdmin(false)
+      }
     })
     return () => unsubscribe()
   }, [])
@@ -114,6 +143,17 @@ export default function Navbar() {
             ))}
             {user ? (
               <div className="flex items-center space-x-4">
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className={cn(
+                      'text-sm tracking-wide transition-colors text-gold-400 hover:text-gold-300 font-bold',
+                      location.pathname === '/admin' ? 'underline decoration-gold-400 underline-offset-4' : ''
+                    )}
+                  >
+                    Admin Panel
+                  </Link>
+                )}
                 <Link
                   to="/dashboard"
                   className={cn(
@@ -203,24 +243,46 @@ export default function Navbar() {
               })}
 
               {user && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: navLinks.length * 0.04, duration: 0.3 }}
-                >
-                  <Link
-                    to="/dashboard"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={cn(
-                      'flex items-center justify-between text-2xl font-serif py-2.5 transition-all',
-                      location.pathname === '/dashboard'
-                        ? 'text-gold-400 font-bold pl-2 border-l-2 border-gold-400'
-                        : 'text-cream-200 hover:text-gold-300 hover:pl-2'
-                    )}
+                <>
+                  {isAdmin && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: navLinks.length * 0.04, duration: 0.3 }}
+                    >
+                      <Link
+                        to="/admin"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={cn(
+                          'flex items-center justify-between text-2xl font-serif py-2.5 transition-all text-gold-400 font-bold',
+                          location.pathname === '/admin'
+                            ? 'pl-2 border-l-2 border-gold-400'
+                            : 'hover:text-gold-300 hover:pl-2'
+                        )}
+                      >
+                        <span>Admin Panel</span>
+                      </Link>
+                    </motion.div>
+                  )}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: (navLinks.length + (isAdmin ? 1 : 0)) * 0.04, duration: 0.3 }}
                   >
-                    <span>Dashboard</span>
-                  </Link>
-                </motion.div>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        'flex items-center justify-between text-2xl font-serif py-2.5 transition-all',
+                        location.pathname === '/dashboard'
+                          ? 'text-gold-400 font-bold pl-2 border-l-2 border-gold-400'
+                          : 'text-cream-200 hover:text-gold-300 hover:pl-2'
+                      )}
+                    >
+                      <span>Dashboard</span>
+                    </Link>
+                  </motion.div>
+                </>
               )}
             </nav>
 
