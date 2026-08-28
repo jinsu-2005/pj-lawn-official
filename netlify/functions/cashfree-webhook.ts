@@ -3,44 +3,58 @@ import { Cashfree, CFEnvironment } from "cashfree-pg";
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-// Initialize Firebase Admin
-if (getApps().length === 0) {
-  try {
-        let serviceAccount: any = null;
-    const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
-    if (FIREBASE_PRIVATE_KEY) {
-      serviceAccount = {
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: Buffer.from(FIREBASE_PRIVATE_KEY, 'base64').toString('utf8'),
-      };
-    } else {
-      const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-      if (raw) {
-        try {
-          serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-        } catch {
-          serviceAccount = JSON.parse(raw);
+let initialized = false;
+
+function initFirebase() {
+  if (!initialized && getApps().length === 0) {
+    try {
+      let serviceAccount: any = null;
+      const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
+      if (FIREBASE_PRIVATE_KEY) {
+        serviceAccount = {
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: Buffer.from(FIREBASE_PRIVATE_KEY, 'base64').toString('utf8'),
+        };
+      } else {
+        const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+        if (raw) {
+          try {
+            serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
+          } catch {
+            serviceAccount = JSON.parse(raw);
+          }
         }
       }
+      
+      if (serviceAccount) {
+        initializeApp({
+          credential: cert(serviceAccount),
+        });
+        initialized = true;
+      }
+    } catch (err) {
+      console.error("Firebase admin init error:", err);
     }
-    
-    if (serviceAccount) {
-      initializeApp({
-        credential: cert(serviceAccount),
-      });
-    }
-  } catch (err) {
-    console.error("Firebase admin init error:", err);
   }
 }
-const db = getFirestore();
 
 export const handler: Handler = async (event, context) => {
-  // Cashfree requires POST
+  // Allow GET for simple health check / browser verification
+  if (event.httpMethod === "GET") {
+    return { 
+      statusCode: 200, 
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "OK", message: "Cashfree Webhook Endpoint is Live and Ready" }) 
+    };
+  }
+
+  // Cashfree sends POST
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
+
+  initFirebase();
 
   try {
     const headers = event.headers || {};
@@ -121,30 +135,33 @@ export const handler: Handler = async (event, context) => {
             const orderIdParts = orderId.split("_");
             const paymentType = orderIdParts.length >= 3 ? orderIdParts[orderIdParts.length - 2] : 'advance';
             
-            const bookingDoc = await db.collection("bookings").doc(bookingId).get();
-            const bData = bookingDoc.exists ? bookingDoc.data() : null;
-            
-            let paymentStatus = 'advance_paid';
-            let amountPaid = bData?.advanceAmount || 5000;
-            
-            if (paymentType === 'full' || paymentType === 'remaining') {
-              paymentStatus = 'fully_paid';
-              amountPaid = bData?.totalAmount || bData?.estimatedAmount || 5000;
-            }
-            
-            // Update Firestore
-            await db.collection("bookings").doc(bookingId).update({
-              paymentStatus: paymentStatus,
-              bookingStatus: "confirmed",
-              amountPaid: amountPaid,
-              updatedAt: new Date()
-            });
-
-            // Make sure the availability is confirmed
-            if (bData && bData.eventDate) {
-              await db.collection("availability").doc(bData.eventDate).update({
-                status: "confirmed"
+            if (getApps().length > 0) {
+              const db = getFirestore();
+              const bookingDoc = await db.collection("bookings").doc(bookingId).get();
+              const bData = bookingDoc.exists ? bookingDoc.data() : null;
+              
+              let paymentStatus = 'advance_paid';
+              let amountPaid = bData?.advanceAmount || 5000;
+              
+              if (paymentType === 'full' || paymentType === 'remaining') {
+                paymentStatus = 'fully_paid';
+                amountPaid = bData?.totalAmount || bData?.estimatedAmount || 5000;
+              }
+              
+              // Update Firestore
+              await db.collection("bookings").doc(bookingId).update({
+                paymentStatus: paymentStatus,
+                bookingStatus: "confirmed",
+                amountPaid: amountPaid,
+                updatedAt: new Date()
               });
+
+              // Make sure the availability is confirmed
+              if (bData && bData.eventDate) {
+                await db.collection("availability").doc(bData.eventDate).update({
+                  status: "confirmed"
+                });
+              }
             }
           }
         }
