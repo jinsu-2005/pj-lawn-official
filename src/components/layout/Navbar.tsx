@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, X, ChevronDown, LayoutDashboard, Shield, LogOut as LogOutIcon, Calendar } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -205,7 +205,10 @@ export default function Navbar() {
                   </AnimatePresence>
                 </div>
               ) : (
-                <button onClick={handleLogin} className="text-sm tracking-wide text-cream-200 hover:text-gold-400 transition-colors">
+                <button
+                  onClick={handleLogin}
+                  className="px-4 py-2 text-sm font-bold uppercase tracking-wider text-cream-200 border border-white/10 hover:border-gold-400 hover:text-gold-400 bg-white/5 hover:bg-gold-400/5 rounded-md transition-all"
+                >
                   Login
                 </button>
               )}
