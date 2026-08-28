@@ -1,10 +1,10 @@
-﻿import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { Calendar, LogOut, Copy, Check, CheckCircle2, Clock, XCircle, CalendarDays, IndianRupee, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { auth, db } from '@/lib/firebase'
+import { auth, db, googleProvider } from '@/lib/firebase'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { onAuthStateChanged, signOut, signInWithPopup } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 const DownloadReceiptButton = lazy(() => import('@/components/ReceiptPDF').then(m => ({ default: m.DownloadReceiptButton })))
@@ -37,7 +37,6 @@ export default function Dashboard() {
         setUser(null)
         setBookings([])
         setLoading(false)
-        navigate('/book')
       }
     })
     return () => {
@@ -109,6 +108,35 @@ export default function Dashboard() {
             </div>
             <div className="h-48 bg-charcoal-800 rounded-2xl" />
           </div>
+        </section>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="pt-32 pb-24 min-h-screen bg-charcoal-900 flex items-center justify-center relative">
+        <section className="container mx-auto px-4 max-w-md">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-charcoal-800 border border-white/5 p-8 rounded-2xl text-center shadow-2xl relative"
+          >
+            <div className="absolute inset-x-0 top-0 h-1 bg-gold-500 rounded-t-2xl" />
+            <div className="w-16 h-16 bg-gold-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Calendar className="text-gold-400 w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-serif text-cream-100 mb-2">My Bookings Dashboard</h1>
+            <p className="text-cream-400 text-sm mb-6 leading-relaxed">
+              Log in to view your reserved dates, check payment receipts, track booking status, and make online payments securely.
+            </p>
+            <button
+              onClick={() => signInWithPopup(auth, googleProvider)}
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-gold-400 hover:bg-gold-300 text-charcoal-950 font-black text-sm uppercase tracking-widest rounded-xl shadow-lg shadow-gold-500/20 active:scale-98 transition-all"
+            >
+              Sign In with Google
+            </button>
+          </motion.div>
         </section>
       </div>
     )

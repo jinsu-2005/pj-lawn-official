@@ -20,6 +20,7 @@ const navLinks = [
   { name: 'Amenities', path: '/amenities' },
   { name: 'Location', path: '/location' },
   { name: 'Contact', path: '/contact' },
+  { name: 'My Bookings', path: '/dashboard' },
 ]
 
 export default function Navbar() {
@@ -110,8 +111,8 @@ export default function Navbar() {
         className={cn(
           'fixed top-0 left-0 right-0 z-[9999] transition-all duration-300',
           isScrolled || isMobileMenuOpen
-            ? 'bg-charcoal-900/98 backdrop-blur-md border-b border-white/5 py-3 md:py-2.5'
-            : 'bg-transparent md:bg-charcoal-900/80 md:backdrop-blur-md md:border-b md:border-white/5 py-5 md:py-3'
+            ? 'bg-charcoal-950/98 backdrop-blur-md border-b border-white/5 py-3 md:py-2.5'
+            : 'bg-transparent md:bg-charcoal-950/90 md:backdrop-blur-md md:border-b md:border-white/5 py-5 md:py-3'
         )}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
