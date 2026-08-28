@@ -16,7 +16,22 @@ export function useAdminGuard() {
         try {
           const docRef = doc(db, 'admins', currentUser.uid);
           const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
+
+          let isInvited = false;
+          if (currentUser.email) {
+            const inviteRef = doc(db, 'admin_invites', currentUser.email.toLowerCase().trim());
+            const inviteSnap = await getDoc(inviteRef);
+            if (inviteSnap.exists()) {
+              isInvited = true;
+            }
+          }
+
+          const isSuperAdmin = currentUser.email && [
+            'jinsu.j2005@gmail.com',
+            'jinsukapgreen@gmail.com'
+          ].includes(currentUser.email.toLowerCase().trim());
+
+          if (docSnap.exists() || isInvited || isSuperAdmin) {
             setIsAdmin(true);
           } else {
             setIsAdmin(false);

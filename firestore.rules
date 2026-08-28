@@ -9,7 +9,10 @@ service cloud.firestore {
     
     // Function to check if the user is an admin
     function isAdmin() {
-      return isAuth() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return isAuth() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/admin_invites/$(request.auth.token.email))
+      );
     }
     
     // Function to check if the user is accessing their own document
@@ -70,6 +73,12 @@ service cloud.firestore {
       // Users can check their own admin status
       allow read: if isOwner(adminId);
       // Only admins can modify the registry
+      allow write: if isAdmin();
+    }
+
+    match /admin_invites/{email} {
+      // Admins can manage invites, anyone can read to verify invites
+      allow read: if true;
       allow write: if isAdmin();
     }
 

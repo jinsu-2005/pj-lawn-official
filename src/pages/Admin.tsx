@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, Image as ImageIcon, IndianRupee, Inbox, LogOut, BarChart3, Bot } from 'lucide-react'
+import { Calendar, Image as ImageIcon, IndianRupee, Inbox, LogOut, BarChart3, Bot, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useAdminGuard } from '@/hooks/useAdminGuard'
 import { db, auth, storage } from '@/lib/firebase'
@@ -11,7 +11,7 @@ import { format } from 'date-fns'
 
 export default function Admin() {
   const { isAdmin, loading, user } = useAdminGuard()
-  const [activeTab, setActiveTab] = useState<'overview' | 'queue' | 'calendar' | 'pricing' | 'gallery' | 'chatbot'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'queue' | 'calendar' | 'pricing' | 'gallery' | 'chatbot' | 'admins'>('overview')
   const [bookings, setBookings] = useState<any[]>([])
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
   
@@ -91,6 +91,7 @@ export default function Admin() {
           <NavButton icon={<IndianRupee size={18}/>} label="Pricing Config" active={activeTab === 'pricing'} onClick={() => setActiveTab('pricing')} />
           <NavButton icon={<ImageIcon size={18}/>} label="Gallery Manager" active={activeTab === 'gallery'} onClick={() => setActiveTab('gallery')} />
           <NavButton icon={<Bot size={18}/>} label="Chatbot AI" active={activeTab === 'chatbot'} onClick={() => setActiveTab('chatbot')} />
+          <NavButton icon={<Users size={18}/>} label="Admin Settings" active={activeTab === 'admins'} onClick={() => setActiveTab('admins')} />
         </nav>
 
         <div className="mt-auto pt-6 border-t border-white/5">
@@ -125,6 +126,10 @@ export default function Admin() {
 
         {activeTab === 'chatbot' && (
           <ChatbotManager setNotification={setNotification} />
+        )}
+
+        {activeTab === 'admins' && (
+          <AdminManagerView setNotification={setNotification} currentUserEmail={user?.email || ''} />
         )}
         
       </div>
@@ -952,6 +957,166 @@ function OverviewView({ bookings }: { bookings: any[] }) {
           <p className="text-sm text-cream-400 uppercase tracking-wider mb-2">Upcoming Events</p>
           <p className="text-3xl font-serif text-green-400">{upcomingCount}</p>
           <p className="text-xs text-cream-400/50 mt-2">Approved & confirmed future events</p>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function AdminManagerView({ setNotification, currentUserEmail }: { setNotification: (n: any) => void; currentUserEmail: string }) {
+  const [invites, setInvites] = useState<any[]>([])
+  const [newEmail, setNewEmail] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "admin_invites"), (snapshot) => {
+      const list: any[] = []
+      snapshot.forEach(doc => list.push({ id: doc.id, ...doc.data() }))
+      list.sort((a, b) => (b.invitedAt?.toMillis() || 0) - (a.invitedAt?.toMillis() || 0))
+      setInvites(list)
+    })
+    return () => unsubscribe()
+  }, [])
+
+  const handleAddInvite = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const emailToInvite = newEmail.toLowerCase().trim()
+    if (!emailToInvite) return
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(emailToInvite)) {
+      setNotification({ type: 'error', message: 'Please enter a valid email address.' })
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      await setDoc(doc(db, "admin_invites", emailToInvite), {
+        email: emailToInvite,
+        invitedAt: new Date(),
+        invitedBy: currentUserEmail
+      })
+      setNotification({ type: 'success', message: `${emailToInvite} is now registered as an Admin!` })
+      setNewEmail('')
+    } catch (err: any) {
+      console.error(err)
+      setNotification({ type: 'error', message: 'Failed to add admin: ' + err.message })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDeleteInvite = async (email: string) => {
+    if (email === currentUserEmail) {
+      setNotification({ type: 'error', message: 'You cannot revoke your own admin permissions.' })
+      return
+    }
+    if (!window.confirm(`Are you sure you want to revoke admin permissions for ${email}?`)) return
+
+    try {
+      await deleteDoc(doc(db, "admin_invites", email))
+      setNotification({ type: 'success', message: `Revoked admin privileges for ${email}.` })
+    } catch (err: any) {
+      console.error(err)
+      setNotification({ type: 'error', message: 'Failed to revoke privileges: ' + err.message })
+    }
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-serif text-cream-50 mb-2">Admin Settings</h2>
+        <p className="text-cream-400 text-sm">Add or revoke administrator access for team members. Admins have access to the dashboard and bookings queue.</p>
+      </div>
+
+      <div className="bg-charcoal-800 border border-white/5 p-6 rounded-md max-w-xl">
+        <h3 className="text-lg font-serif text-cream-100 mb-4">Invite New Administrator</h3>
+        <form onSubmit={handleAddInvite} className="flex gap-4">
+          <input
+            type="email"
+            placeholder="Enter Gmail address"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            className="flex-1 bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 focus:outline-none focus:border-gold-500/50 text-sm"
+            required
+          />
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Adding...' : 'Grant Access'}
+          </Button>
+        </form>
+      </div>
+
+      <div className="bg-charcoal-800 border border-white/5 rounded-md overflow-hidden">
+        <div className="p-6 border-b border-white/5">
+          <h3 className="text-lg font-serif text-cream-100">Active Administrators</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-white/5 text-xs text-gold-400 uppercase tracking-widest bg-charcoal-900/50">
+                <th className="p-6 font-medium">Email Address</th>
+                <th className="p-6 font-medium">Invited By</th>
+                <th className="p-6 font-medium">Invited On</th>
+                <th className="p-6 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5 text-sm text-cream-200">
+              {/* Fallback Display for Super Admins */}
+              <tr className="hover:bg-white/[0.01] transition-colors">
+                <td className="p-6 font-medium text-cream-50 flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  jinsu.j2005@gmail.com
+                </td>
+                <td className="p-6 text-cream-400">System Setup</td>
+                <td className="p-6 text-cream-400">Owner Account</td>
+                <td className="p-6 text-right">
+                  <span className="text-gold-500 text-xs uppercase tracking-wider font-semibold px-2 py-1">Owner (Root)</span>
+                </td>
+              </tr>
+              <tr className="hover:bg-white/[0.01] transition-colors">
+                <td className="p-6 font-medium text-cream-50 flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  jinsukapgreen@gmail.com
+                </td>
+                <td className="p-6 text-cream-400">System Setup</td>
+                <td className="p-6 text-cream-400">Owner Account</td>
+                <td className="p-6 text-right">
+                  <span className="text-gold-500 text-xs uppercase tracking-wider font-semibold px-2 py-1">Owner (Root)</span>
+                </td>
+              </tr>
+
+              {/* Dynamic Database Invites */}
+              {invites
+                .filter(inv => inv.email !== 'jinsu.j2005@gmail.com' && inv.email !== 'jinsukapgreen@gmail.com')
+                .map((invite) => (
+                  <tr key={invite.id} className="hover:bg-white/[0.01] transition-colors">
+                    <td className="p-6 font-medium text-cream-50 flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      {invite.email}
+                    </td>
+                    <td className="p-6 text-cream-400">{invite.invitedBy || 'System Setup'}</td>
+                    <td className="p-6 text-cream-400">
+                      {invite.invitedAt ? format(invite.invitedAt.toDate(), 'MMM dd, yyyy') : 'N/A'}
+                    </td>
+                    <td className="p-6 text-right">
+                      <button
+                        onClick={() => handleDeleteInvite(invite.email)}
+                        className="text-red-400 hover:text-red-300 font-medium text-xs uppercase tracking-wider p-2 rounded hover:bg-red-500/10 transition-colors"
+                      >
+                        Revoke Access
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              {invites.filter(inv => inv.email !== 'jinsu.j2005@gmail.com' && inv.email !== 'jinsukapgreen@gmail.com').length === 0 && invites.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="p-12 text-center text-cream-400">
+                    No custom administrators found in registry.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </motion.div>
