@@ -507,12 +507,12 @@ export default function Booking() {
                   <h2 className="text-xl font-serif text-cream-100 mb-4">Confirm Your Booking Request</h2>
                   <p className="text-cream-400 mb-8 max-w-md mx-auto">
                     You are about to submit a booking request for {watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : ''}. 
-                    You will be prompted to securely sign in with Google to confirm your identity.
+                    {!currentUser && " You will be prompted to securely sign in with Google to confirm your identity."}
                   </p>
                   <div className="flex justify-center gap-4">
                     <Button type="button" variant="outline" onClick={() => setStep(2)}>Back</Button>
                     <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? 'Processing...' : 'Sign in & Submit Request'}
+                      {isSubmitting ? 'Processing...' : currentUser ? 'Submit Booking Request' : 'Sign in & Submit Request'}
                     </Button>
                   </div>
                 </motion.div>
