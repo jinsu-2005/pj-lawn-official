@@ -6,24 +6,36 @@
   :root {
     --background: 0 0% 4%; /* charcoal-900 */
     --foreground: 41 43% 94%; /* cream-200 */
-    --card: 0 0% 7%; /* charcoal-800 */
+    --card: 0 0% 9%; /* charcoal-800 — slightly lifted from page */
     --card-foreground: 41 43% 94%;
-    --popover: 0 0% 7%;
+    --popover: 0 0% 9%;
     --popover-foreground: 41 43% 94%;
     --primary: 44 57% 54%; /* gold-500 */
     --primary-foreground: 0 0% 4%;
-    --secondary: 0 0% 10%; /* charcoal-700 */
+    --secondary: 0 0% 13%; /* charcoal-750 */
     --secondary-foreground: 41 43% 94%;
-    --muted: 0 0% 14%; /* charcoal-600 */
+    --muted: 0 0% 17%; /* charcoal-700 */
     --muted-foreground: 41 18% 78%; /* cream-400 */
     --accent: 44 57% 54%;
     --accent-foreground: 0 0% 4%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 41 43% 94%;
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
+    --border: 0 0% 15%;
+    --input: 0 0% 13%;
     --ring: 44 57% 54%;
     --radius: 0.5rem;
+
+    /* Surface levels for refined dark-theme hierarchy */
+    --surface-0: #0a0a0a;   /* page base */
+    --surface-1: #111111;   /* elevated page zones */
+    --surface-2: #161616;   /* cards */
+    --surface-3: #1c1c1c;   /* inner card sections */
+    --surface-4: #222222;   /* inputs, nested panels */
+    --surface-border: rgba(255,255,255,0.07);
+    --surface-border-strong: rgba(255,255,255,0.12);
+    --gold-glow: rgba(201, 168, 76, 0.15);
+    --gold-border: rgba(201, 168, 76, 0.25);
+    --gold-border-strong: rgba(201, 168, 76, 0.45);
   }
 }
 
@@ -47,10 +59,10 @@
     @apply bg-charcoal-900;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-charcoal-700 rounded-full border-2 border-solid border-charcoal-900;
+    @apply bg-charcoal-750 rounded-full border-2 border-solid border-charcoal-900;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-charcoal-600;
+    @apply bg-charcoal-700;
   }
   
   /* For Firefox */
@@ -61,26 +73,49 @@
 }
 
 @layer utilities {
-  /* Sleek custom scrollbar for textareas and widgets */
+  /* ─── Surface Hierarchy ──────────────────────────── */
+  .surface-page   { background: var(--surface-0); }
+  .surface-raised { background: var(--surface-1); }
+  .surface-card   {
+    background: var(--surface-2);
+    border: 1px solid var(--surface-border-strong);
+  }
+  .surface-inner  {
+    background: var(--surface-3);
+    border: 1px solid var(--surface-border);
+  }
+  .surface-input  {
+    background: var(--surface-4);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .surface-input:focus {
+    border-color: rgba(201,168,76,0.55);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.08);
+  }
+
+  /* ─── Sleek custom scrollbar for textareas and widgets ── */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 8px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(212, 175, 55, 0.3);
+    background: rgba(201, 168, 76, 0.25);
     border-radius: 8px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(212, 175, 55, 0.6);
+    background: rgba(201, 168, 76, 0.5);
   }
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(212, 175, 55, 0.3) rgba(0, 0, 0, 0.2);
+    scrollbar-color: rgba(201, 168, 76, 0.25) rgba(0, 0, 0, 0.2);
   }
+
+  /* ─── Text Utilities ─────────────────────────────── */
   .text-balance {
     text-wrap: balance;
   }
@@ -104,4 +139,31 @@
       0 1px 3px rgba(0, 0, 0, 0.95),
       0 2px 10px rgba(0, 0, 0, 0.85);
   }
+
+  /* ─── Diamond / Sparkle Mobile Accents ──────────── */
+  .sparkle {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    color: #c9a84c;
+    font-style: normal;
+    line-height: 1;
+    z-index: 0;
+  }
+  .sparkle-sm  { font-size: 0.55rem; opacity: 0.22; }
+  .sparkle-md  { font-size: 0.7rem;  opacity: 0.28; }
+  .sparkle-lg  { font-size: 0.85rem; opacity: 0.2;  }
+  .sparkle-twinkle { animation: sparkleTwinkle 3s ease-in-out infinite; }
+  .sparkle-float   { animation: sparkleFloat 4s ease-in-out infinite; }
+  .sparkle-slow    { animation: sparkleTwinkle 5s ease-in-out infinite; }
+  .sparkle-delay-1 { animation-delay: 0.8s; }
+  .sparkle-delay-2 { animation-delay: 1.6s; }
+  .sparkle-delay-3 { animation-delay: 2.4s; }
+
+  /* ─── Gold progress bar ──────────────────────────── */
+  .progress-gold {
+    background: linear-gradient(90deg, #c9a84c, #e8c96d);
+    box-shadow: 0 0 8px rgba(201,168,76,0.5);
+  }
 }
+

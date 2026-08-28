@@ -29,9 +29,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     }
     
     const sizes = {
-      sm: 'h-10 px-5 text-sm font-extrabold',
-      md: 'h-12 px-8 text-base font-black',
-      lg: 'h-14 px-10 text-lg font-black tracking-[0.1em]',
+      sm: 'min-h-[2.5rem] px-5 py-2 text-sm font-extrabold',
+      md: 'min-h-[3rem] px-8 py-2.5 text-base font-black',
+      lg: 'min-h-[3.5rem] px-10 py-3 text-lg font-black tracking-[0.1em]',
     }
 
     const classes = cn(baseStyles, variants[variant], sizes[size], className)

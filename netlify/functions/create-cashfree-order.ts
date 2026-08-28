@@ -107,7 +107,7 @@ export const handler: Handler = async (event, context) => {
     cashfree.XApiVersion = "2025-01-01";
 
     const orderId = `order_${bookingId}_${paymentType}_${Date.now()}`;
-    const returnUrl = `${process.env.URL || 'https://pjlawn.netlify.app'}/dashboard`;
+    const returnUrl = `${process.env.URL || 'https://pjlawn.netlify.app'}/dashboard?order_id={order_id}`;
 
     const request = {
       order_amount: orderAmount,
@@ -137,7 +137,8 @@ export const handler: Handler = async (event, context) => {
       statusCode: 200,
       body: JSON.stringify({ 
         payment_session_id: response.data.payment_session_id,
-        order_id: orderId 
+        order_id: orderId,
+        environment: env === CFEnvironment.PRODUCTION ? 'production' : 'sandbox'
       })
     };
   } catch (error: any) {

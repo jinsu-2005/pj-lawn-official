@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import { MapPin, Phone, Navigation } from 'lucide-react'
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
-import { Button } from '@/components/ui/Button'
 
 export default function Location() {
   const mapUrl = "https://maps.google.com/maps?q=PJ+Lawn+Paul+Vathiyar+Compound+Gandhi+Nagar+Nagercoil&output=embed&z=17"
@@ -69,14 +68,14 @@ export default function Location() {
               </div>
               
               <div className="pt-6 border-t border-white/10">
-                <Button 
+                <a 
                   href="https://wa.me/919489724975?text=Hi%2C%20I'd%20like%20to%20know%20more%20about%20booking%20PJ%20Lawn" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-full bg-[#25D366] hover:bg-[#1ebd5a] text-white border-none flex items-center justify-center gap-2"
+                  className="w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-black font-black text-sm uppercase tracking-wider shadow-lg shadow-[#25D366]/20 transition-all active:scale-98"
                 >
-                  <WhatsAppIcon className="w-5 h-5" /> Message on WhatsApp
-                </Button>
+                  <WhatsAppIcon className="w-5 h-5 text-black" /> Message on WhatsApp
+                </a>
               </div>
             </div>
           </motion.div>
@@ -84,19 +83,29 @@ export default function Location() {
           {/* Interactive Map */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.2 }}
-            className="lg:col-span-8 aspect-square md:aspect-video lg:aspect-auto lg:h-[600px] bg-charcoal-900 border border-white/5 rounded-md overflow-hidden order-1 lg:order-2 relative group"
+            className="lg:col-span-8 aspect-square md:aspect-video lg:aspect-auto lg:h-[600px] bg-charcoal-900 border border-white/10 rounded-2xl overflow-hidden order-1 lg:order-2 relative shadow-2xl"
           >
-            <div className="image-scrim pointer-events-none group-hover:opacity-0 transition-opacity duration-500 z-10" />
+            <div className="absolute top-4 right-4 z-20">
+              <a
+                href={directionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-charcoal-900/90 hover:bg-gold-400 text-cream-100 hover:text-black border border-gold-500/40 text-xs font-bold px-4 py-2.5 rounded-xl backdrop-blur-md shadow-lg transition-all active:scale-95"
+              >
+                <Navigation size={14} className="text-gold-400 group-hover:text-black" />
+                <span>Open in Maps</span>
+              </a>
+            </div>
             <iframe 
               src={mapUrl}
               width="100%" 
               height="100%" 
-              style={{ border: 0 }} 
-              allowFullScreen={false} 
+              style={{ border: 0, minHeight: '350px' }} 
+              allowFullScreen
               loading="lazy" 
               referrerPolicy="no-referrer-when-downgrade"
               title="PJ Lawn Location Map"
-              className="w-full h-full grayscale-[0.5] contrast-125 opacity-90 hover:grayscale-0 hover:opacity-100 transition-all duration-500"
+              className="w-full h-full"
             ></iframe>
           </motion.div>
 

@@ -79,7 +79,7 @@ export default function Contact() {
             </div>
             <a 
               href="tel:+919489724975" 
-              className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gold-400 hover:bg-gold-300 text-charcoal-950 font-bold text-sm transition-all shadow-lg shadow-gold-500/20 active:scale-95"
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-gold-400 hover:bg-gold-300 text-black font-black text-sm transition-all shadow-lg shadow-gold-500/20 active:scale-95 uppercase tracking-wider"
             >
               <Phone size={18} /> Call +91 94897 24975
             </a>
@@ -96,7 +96,7 @@ export default function Contact() {
               </div>
               <h3 className="text-xl font-serif text-cream-100 mb-2">Online Date Reservation</h3>
               <p className="text-cream-400 text-sm leading-relaxed mb-6">
-                Select your preferred event date and session (Morning, Evening, or Full Day) and submit an instant reservation request.
+                Select your preferred event date and session (Evening 5:00 PM – 10:00 PM) and submit an instant reservation request.
               </p>
             </div>
             <Button to="/book" size="lg" className="w-full">
@@ -130,7 +130,7 @@ export default function Contact() {
           <div className="flex items-center gap-2 text-gold-400 font-medium">
             <Clock size={18} /> Venue Operating Hours:
           </div>
-          <div>Evening Sessions (4:00 PM – 11:00 PM)</div>
+          <div>Evening Sessions (5:00 PM – 10:00 PM)</div>
         </div>
       </section>
 

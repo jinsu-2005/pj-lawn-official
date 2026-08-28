@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { format } from 'date-fns'
 import { DayPicker } from 'react-day-picker'
-import 'react-day-picker/dist/style.css'
+import 'react-day-picker/style.css'
 import { auth, googleProvider } from '@/lib/firebase'
 import { signInWithPopup, onAuthStateChanged } from 'firebase/auth'
 import { checkAndHoldDate, createBooking, getPricingTiers, PricingTier } from '@/lib/bookingService'
@@ -64,8 +64,13 @@ export default function Booking() {
   const watchName = watch('name')
   const watchPhone = watch('phone')
 
+  // Tomorrow's date at 00:00:00 (booking starts after today)
+  const tomorrow = new Date()
+  tomorrow.setHours(0, 0, 0, 0)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
   // Parse current date string to Date object for DayPicker
-  const selectedDateObj = watchDate ? new Date(watchDate) : undefined;
+  const selectedDateObj = watchDate ? new Date(`${watchDate}T00:00:00`) : undefined;
   
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -291,138 +296,199 @@ export default function Booking() {
 
                   <h2 className="text-xl font-serif text-cream-100 mb-6">When is your event?</h2>
                   
-                  <div className="bg-charcoal-900 border border-white/5 rounded-2xl mb-8 flex flex-col items-center justify-center py-10 shadow-2xl">
+                  <div className="bg-charcoal-900 border border-white/10 rounded-2xl mb-8 flex flex-col items-center justify-center p-3 sm:p-6 shadow-2xl overflow-hidden w-full max-w-md mx-auto">
                     <style>{`
-                      .rdp {
-                        --rdp-cell-size: 44px;
-                        --rdp-accent-color: #D4AF37; /* gold-500 */
-                        --rdp-background-color: rgba(212, 175, 55, 0.1);
-                        color: #E2DFD2;
-                        margin: 0;
+                      .rdp-root {
+                        --rdp-accent-color: #D4AF37;
+                        --rdp-accent-background-color: rgba(212, 175, 55, 0.15);
+                        --rdp-day-height: 40px;
+                        --rdp-day-width: 40px;
+                        --rdp-day_button-height: 38px;
+                        --rdp-day_button-width: 38px;
+                        --rdp-day_button-border-radius: 9999px;
+                        color: #ede5d0;
+                        margin: 0 auto;
+                        position: relative;
+                        width: 100%;
+                        max-width: 320px;
                       }
-                      /* Month name caption styling */
-                      .rdp-caption_label {
+                      @media (min-width: 640px) {
+                        .rdp-root {
+                          --rdp-day-height: 44px;
+                          --rdp-day-width: 44px;
+                          --rdp-day_button-height: 42px;
+                          --rdp-day_button-width: 42px;
+                          max-width: 350px;
+                        }
+                      }
+
+                      /* Caption & Header */
+                      .rdp-month_caption, .rdp-caption {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        padding: 0.25rem 0 1rem 0;
                         font-family: Georgia, serif;
-                        font-size: 1.25rem;
-                        color: #FFF8DC !important; /* warm starlight */
-                        font-weight: bold;
-                        letter-spacing: 0.05em;
+                        font-size: 1.2rem;
+                        font-weight: 700;
+                        color: #FFFFFF !important;
+                        position: relative;
                       }
-                      /* Navigation Buttons */
-                      .rdp-nav_button {
-                        color: #d4af37 !important;
-                        background: rgba(255, 255, 255, 0.03) !important;
-                        border: 1px solid rgba(212, 175, 55, 0.2) !important;
-                        border-radius: 9999px !important;
-                        width: 34px !important;
-                        height: 34px !important;
-                        display: inline-flex;
+
+                      /* Nav Arrows */
+                      .rdp-nav {
+                        position: absolute;
+                        top: 0.25rem;
+                        left: 0;
+                        right: 0;
+                        display: flex;
+                        justify-content: space-between;
+                        pointer-events: none;
+                        z-index: 10;
+                      }
+                      .rdp-button_next, .rdp-button_previous, .rdp-nav_button {
+                        pointer-events: auto;
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 9999px;
+                        background: rgba(255, 255, 255, 0.08) !important;
+                        border: 1px solid rgba(212, 175, 55, 0.35) !important;
+                        color: #D4AF37 !important;
+                        display: flex;
                         align-items: center;
                         justify-content: center;
-                        transition: all 0.2s;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                      }
+                      .rdp-button_next:hover, .rdp-button_previous:hover, .rdp-nav_button:hover {
+                        background: #D4AF37 !important;
+                        color: #000000 !important;
+                      }
+
+                      /* Table Grid */
+                      .rdp-month_grid, .rdp-table {
+                        width: 100%;
+                        border-collapse: separate;
+                        border-spacing: 2px 4px;
+                        margin: 0 auto;
+                      }
+                      @media (min-width: 640px) {
+                        .rdp-month_grid, .rdp-table {
+                          border-spacing: 4px 6px;
+                        }
+                      }
+
+                      .rdp-weekdays, .rdp-head_row {
+                        display: table-row;
+                      }
+                      .rdp-weekday, .rdp-head_cell, th.rdp-weekday {
+                        display: table-cell;
+                        text-align: center;
+                        color: #FFF0A0 !important;
+                        font-size: 0.78rem;
+                        font-weight: 800;
+                        text-transform: uppercase;
+                        letter-spacing: 0.06em;
+                        padding-bottom: 10px;
+                        opacity: 1 !important;
+                      }
+                      .rdp-week, .rdp-row {
+                        display: table-row;
+                      }
+                      .rdp-day, .rdp-cell {
+                        display: table-cell;
+                        text-align: center;
+                        vertical-align: middle;
+                        padding: 0;
+                      }
+
+                      /* Day Buttons base */
+                      .rdp-day_button {
+                        border-radius: 9999px !important;
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        margin: 0 auto !important;
+                        transition: all 0.15s ease-in-out !important;
                         cursor: pointer;
                       }
-                      .rdp-nav_button:hover {
-                        background: rgba(212, 175, 55, 0.15) !important;
-                        border-color: #d4af37 !important;
-                        color: #fff !important;
-                      }
-                      /* Weekday labels */
-                      .rdp-head_cell {
-                        font-size: 0.75rem;
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        letter-spacing: 0.1em;
-                        color: #d4af37;
-                        padding-bottom: 12px;
-                      }
-                      /* Day Cells styling */
-                      .rdp-day {
-                        font-weight: 500;
-                        border-radius: 9999px !important; /* Circular cells */
-                        width: 42px;
-                        height: 42px;
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
-                        margin: 1px;
-                        transition: all 0.2s;
-                        position: relative;
-                        border: 1px solid transparent;
-                        color: #ede5d0;
-                      }
-                      /* Available Dates: soft green tint border and tiny under-dot */
-                      .rdp-day:not([disabled]):not(.rdp-day_selected):not(.rdp-day_outside) {
-                        background: rgba(255, 255, 255, 0.02);
-                        border-color: rgba(34, 197, 94, 0.2);
-                      }
-                      .rdp-day:not([disabled]):not(.rdp-day_selected):not(.rdp-day_outside):hover {
-                        background: rgba(34, 197, 94, 0.15) !important;
-                        border-color: rgba(34, 197, 94, 0.6) !important;
-                        color: #fff;
-                        transform: scale(1.05);
-                      }
-                      /* Available under-dot */
-                      .rdp-day:not([disabled]):not(.rdp-day_selected):not(.rdp-day_outside)::after {
-                        content: '';
-                        position: absolute;
-                        bottom: 4px;
-                        left: 50%;
-                        transform: translateX(-50%);
-                        width: 4px;
-                        height: 4px;
-                        border-radius: 50%;
-                        background-color: #22c55e;
-                      }
-                      /* Selected Date - Solid gold-500 circle */
-                      .rdp-day_selected, .rdp-day_selected:focus-visible, .rdp-day_selected:hover {
-                        color: #0c0c0c !important;
-                        background-color: #D4AF37 !important;
-                        border-color: #D4AF37 !important;
+
+                      /* 1. AVAILABLE DATES: Bright Bold White + Rounded Transparent Green */
+                      .rdp-day:not(.rdp-disabled):not(.rdp-outside):not(.rdp-selected) .rdp-day_button,
+                      .rdp-day:not([disabled]):not(.rdp-selected):not(.rdp-outside) .rdp-day_button {
+                        color: #FFFFFF !important;
                         font-weight: 800 !important;
-                        box-shadow: 0 4px 14px rgba(212, 175, 55, 0.4);
-                        transform: scale(1.05);
+                        background: rgba(34, 197, 94, 0.16) !important;
+                        background-color: rgba(34, 197, 94, 0.16) !important;
+                        border: 1.5px solid rgba(34, 197, 94, 0.55) !important;
+                        box-shadow: 0 0 8px rgba(34, 197, 94, 0.12) !important;
                       }
-                      .rdp-day_selected::after {
-                        display: none !important; /* Hide dot on selected date */
+                      .rdp-day:not(.rdp-disabled):not(.rdp-outside):not(.rdp-selected) .rdp-day_button:hover {
+                        background: rgba(34, 197, 94, 0.35) !important;
+                        background-color: rgba(34, 197, 94, 0.35) !important;
+                        border-color: #22c55e !important;
+                        transform: scale(1.08);
                       }
-                      /* Unavailable/Disabled Dates: opacity fade for cleanliness */
-                      .rdp-day_disabled {
-                        opacity: 0.18;
-                        color: #777777 !important;
-                        cursor: not-allowed;
+
+                      /* 2. SELECTED DATE: Rounded Solid Gold */
+                      .rdp-day.rdp-selected .rdp-day_button,
+                      .rdp-selected .rdp-day_button,
+                      .rdp-day_button[aria-selected="true"],
+                      .rdp-day[aria-selected="true"] .rdp-day_button,
+                      .rdp-day_button.rdp-selected {
+                        color: #000000 !important;
+                        background: #D4AF37 !important;
+                        background-color: #D4AF37 !important;
+                        border: 2px solid #FFF8DC !important;
+                        font-weight: 900 !important;
+                        box-shadow: 0 0 18px rgba(212, 175, 55, 0.7) !important;
+                        transform: scale(1.08) !important;
+                      }
+
+                      /* 3. UNAVAILABLE / DISABLED / PAST DATES: Grayscale with line-through */
+                      .rdp-day.rdp-disabled .rdp-day_button,
+                      .rdp-disabled .rdp-day_button,
+                      .rdp-day_button:disabled,
+                      .rdp-day_button[aria-disabled="true"],
+                      .rdp-day[aria-disabled="true"] .rdp-day_button {
+                        opacity: 0.3 !important;
+                        color: #6b7280 !important;
+                        cursor: not-allowed !important;
                         background: transparent !important;
+                        background-color: transparent !important;
                         border: 1px solid transparent !important;
-                        text-decoration: none !important;
+                        text-decoration: line-through !important;
+                        box-shadow: none !important;
+                        transform: none !important;
                       }
-                      .rdp-day_disabled::after {
-                        display: none !important;
-                      }
-                      /* Outside month days */
-                      .rdp-day_outside {
-                        opacity: 0.25;
+
+                      .rdp-outside {
+                        opacity: 0.15 !important;
                       }
                     `}</style>
                     <DayPicker 
                       mode="single"
                       selected={selectedDateObj}
                       onSelect={handleDateSelect}
-                      disabled={[{ before: new Date() }, ...unavailableDates]}
-                      className="p-4"
+                      startMonth={new Date()}
+                      disabled={[{ before: tomorrow }, ...unavailableDates]}
+                      className="p-1 sm:p-3"
                     />
                     
-                    <div className="flex gap-6 mt-4 pt-6 border-t border-white/5 w-full max-w-[320px] justify-center text-xs text-cream-400">
+                    <div className="flex flex-wrap gap-4 mt-3 pt-4 border-t border-white/10 w-full justify-center text-xs text-cream-300">
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span>Available</span>
+                        <div className="w-3.5 h-3.5 rounded-full bg-green-500/20 border border-green-500 flex items-center justify-center">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+                        </div>
+                        <span className="font-semibold text-cream-100">Available</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-gold-500"></div>
-                        <span className="text-cream-200">Selected</span>
+                        <div className="w-3.5 h-3.5 rounded-full bg-gold-400 border border-gold-300"></div>
+                        <span className="font-semibold text-gold-300">Selected</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-cream-400/20"></div>
-                        <span>Unavailable</span>
+                        <div className="w-3.5 h-3.5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[9px] text-cream-400/50">✕</div>
+                        <span className="text-cream-400/60 line-through">Unavailable</span>
                       </div>
                     </div>
 
@@ -504,15 +570,17 @@ export default function Booking() {
                   <div className="w-16 h-16 bg-gold-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Info className="text-gold-400 w-8 h-8" />
                   </div>
-                  <h2 className="text-xl font-serif text-cream-100 mb-4">Confirm Your Booking Request</h2>
-                  <p className="text-cream-400 mb-8 max-w-md mx-auto">
-                    You are about to submit a booking request for {watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : ''}. 
-                    {!currentUser && " You will be prompted to securely sign in with Google to confirm your identity."}
+                  <h2 className="text-xl font-serif text-cream-100 mb-3">Confirm Booking Request</h2>
+                  <p className="text-cream-400 mb-8 max-w-md mx-auto text-sm leading-relaxed">
+                    {watchDate ? `Selected date: ${format(new Date(watchDate), 'MMMM do, yyyy')}.` : ''} 
+                    {currentUser 
+                      ? ' Review your details and submit below.' 
+                      : ' Sign in with Google to submit and secure your date.'}
                   </p>
-                  <div className="flex justify-center gap-4">
-                    <Button type="button" variant="outline" onClick={() => setStep(2)}>Back</Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? 'Processing...' : currentUser ? 'Submit Booking Request' : 'Sign in & Submit Request'}
+                  <div className="flex flex-col-reverse sm:flex-row justify-center gap-4">
+                    <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => setStep(2)}>Back</Button>
+                    <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+                      {isSubmitting ? 'Submitting...' : currentUser ? 'Submit Booking Request' : 'Continue with Google to Book'}
                     </Button>
                   </div>
                 </motion.div>
@@ -597,7 +665,7 @@ export default function Booking() {
                   <Clock className="text-gold-400 shrink-0 w-5 h-5 mt-0.5" />
                   <div>
                     <p className="text-cream-200 text-sm font-medium">Time</p>
-                    <p className="text-cream-400 text-sm">4:00 PM – 11:00 PM</p>
+                    <p className="text-cream-400 text-sm">5:00 PM – 10:00 PM</p>
                   </div>
                 </div>
                 

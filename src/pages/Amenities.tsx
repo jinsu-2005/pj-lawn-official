@@ -1,10 +1,15 @@
 import { motion } from 'framer-motion'
-import { CarFront, Toilet, Droplets, Lightbulb, Users, CheckCircle2 } from 'lucide-react'
+import { CarFront, Toilet, Droplets, Lightbulb, Users, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 const amenitiesImg = '/gallery/6.webp'
 
 const amenitiesList = [
+  {
+    icon: Zap,
+    title: 'Free Electricity',
+    desc: 'Uninterrupted power supply and electricity included at zero extra cost for all your lighting, sound, and event needs.',
+  },
   {
     icon: CarFront,
     title: 'Free Parking',
@@ -29,11 +34,6 @@ const amenitiesList = [
     icon: Users,
     title: 'Flexible Seating (50-300)',
     desc: 'A spacious open lawn that can comfortably accommodate intimate gatherings of 50 up to grand events of 300 guests.',
-  },
-  {
-    icon: CheckCircle2,
-    title: 'Vendor Friendly',
-    desc: 'Open to your choice of decorators, caterers, and event planners to make your vision come true.',
   },
 ]
 

@@ -13,13 +13,6 @@ const amenitiesImg = '/gallery/6.webp'
 
 import { Variants } from 'framer-motion'
 
-const occasions = [
-  'Birthday Parties', 'Anniversary Celebrations', 'Wedding Functions', 
-  'Wedding Receptions', 'Engagement Functions', 'Family Functions', 
-  'Get-togethers', 'Private Parties', 'Celebrations', 'Social Gatherings', 
-  'Dinner Functions', 'Lunch/Dining Events', 'Buffet Events', 
-  'Community Gatherings', 'Small Functions', 'Special Occasions'
-]
 
 const staggerContainer: Variants = {
   hidden: { opacity: 0 },
@@ -105,22 +98,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. Occasions Strip (Infinite scroll animation) */}
-      <section className="py-12 border-b border-white/5 bg-charcoal-900 overflow-hidden flex whitespace-nowrap">
-        <div className="animate-shimmer flex gap-4 pr-4 w-[200%] hover:pause-shimmer transition-all duration-300">
-          {occasions.map((occasion, i) => (
-            <span key={i} className="px-6 py-2 rounded-full border border-white/10 text-cream-400 text-sm tracking-wide cursor-default hover:text-gold-400 hover:border-gold-500/30 transition-colors">
-              {occasion}
-            </span>
-          ))}
-          {/* Duplicated for infinite loop effect with aria-hidden for accessibility */}
-          {occasions.map((occasion, i) => (
-            <span key={`dup-${i}`} aria-hidden="true" className="px-6 py-2 rounded-full border border-white/10 text-cream-400 text-sm tracking-wide cursor-default hover:text-gold-400 hover:border-gold-500/30 transition-colors">
-              {occasion}
-            </span>
-          ))}
-        </div>
-      </section>
+
 
       {/* 3. About Preview */}
       <section className="py-24 md:py-32 container mx-auto px-4 sm:px-6 lg:px-8">
@@ -266,17 +244,27 @@ export default function Home() {
             </div>
           </motion.div>
           
-          <motion.div variants={fadeLeft} className="h-[400px] lg:h-auto bg-charcoal-900 relative">
+          <motion.div variants={fadeLeft} className="h-[380px] lg:h-auto bg-charcoal-900 relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
+            <div className="absolute top-4 right-4 z-20">
+              <a
+                href="https://maps.app.goo.gl/mcK4uRMVUW4g8uxRA"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 bg-charcoal-900/90 hover:bg-gold-400 text-cream-100 hover:text-black border border-gold-500/40 text-xs font-bold px-3.5 py-2 rounded-xl backdrop-blur-md shadow-lg transition-all active:scale-95"
+              >
+                <span>Open in Maps ↗</span>
+              </a>
+            </div>
             <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3949.4215286282823!2d77.41261!3d8.17810!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b04f1a2c2b6f123%3A0x1234567890abcdef!2sGandhi%20Nagar%2C%20Kurusady%2C%20Nagercoil%2C%20Tamil%20Nadu%20629004!5e0!3m2!1sen!2sin!4v1680000000000!5m2!1sen!2sin" 
+              src="https://maps.google.com/maps?q=PJ+Lawn+Paul+Vathiyar+Compound+Gandhi+Nagar+Nagercoil&output=embed&z=17" 
               width="100%" 
               height="100%" 
               style={{ border: 0 }} 
-              allowFullScreen={false} 
+              allowFullScreen
               loading="lazy" 
               referrerPolicy="no-referrer-when-downgrade"
               title="PJ Lawn Location Map"
-              className="absolute inset-0 w-full h-full grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-700 object-cover"
+              className="w-full h-full"
             ></iframe>
           </motion.div>
         </motion.div>

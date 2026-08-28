@@ -63,21 +63,29 @@ export default function Admin() {
   return (
     <div className="pt-20 pb-24 min-h-screen bg-charcoal-900 relative">
       {/* Admin-only notice banner */}
-      <div className="bg-gold-500/10 border-b border-gold-500/20 px-4 py-2 text-center">
-        <p className="text-xs text-gold-400/80 tracking-wide">
+      <div style={{ background: 'rgba(201,168,76,0.07)', borderBottom: '1px solid rgba(201,168,76,0.15)' }} className="px-4 py-2 text-center">
+        <p className="text-xs text-gold-400/70 tracking-wide">
           🔒 This Admin Panel is only visible to authorized administrators. Customers cannot see or access this page.
         </p>
       </div>
       {/* Toast Notification */}
       {notification && (
-        <div className="fixed top-24 right-4 z-50 max-w-sm w-full bg-charcoal-800 border-l-4 border-gold-500 shadow-2xl p-4 flex items-start gap-3 rounded-r-md animate-fade-in">
+        <div
+          className="fixed top-24 right-4 z-50 max-w-sm w-full shadow-2xl p-4 flex items-start gap-3 rounded-xl animate-fade-in"
+          style={{
+            background: '#161616',
+            borderLeft: `3px solid ${ notification.type === 'success' ? '#4ade80' : notification.type === 'error' ? '#f87171' : '#e8c96d' }`,
+            border: `1px solid ${ notification.type === 'success' ? 'rgba(74,222,128,0.2)' : notification.type === 'error' ? 'rgba(248,113,113,0.2)' : 'rgba(232,201,109,0.2)' }`,
+            borderLeftWidth: '3px',
+          }}
+        >
           <div className="flex-1">
             <h4 className="text-sm font-semibold text-cream-100 uppercase tracking-wider">
-              {notification.type === 'success' ? 'Success' : notification.type === 'error' ? 'Error' : 'Notification'}
+              {notification.type === 'success' ? '✓ Success' : notification.type === 'error' ? '✕ Error' : 'Notification'}
             </h4>
-            <p className="text-sm text-cream-400 mt-1">{notification.message}</p>
+            <p className="text-sm text-cream-300 mt-1">{notification.message}</p>
           </div>
-          <button onClick={() => setNotification(null)} className="text-cream-400 hover:text-cream-200 text-lg leading-none">
+          <button onClick={() => setNotification(null)} className="text-cream-400 hover:text-cream-100 w-6 h-6 flex items-center justify-center rounded transition-colors">
             &times;
           </button>
         </div>
@@ -85,15 +93,21 @@ export default function Admin() {
 
       <div className="flex flex-col md:flex-row">
         {/* Sidebar — vertical on desktop, horizontal scroll on mobile */}
-        <div className="w-full md:w-64 bg-charcoal-800 border-b md:border-b-0 md:border-r border-white/5 md:min-h-[calc(100vh-8rem)] flex-shrink-0">
+        <div
+          className="w-full md:w-64 border-b md:border-b-0 md:border-r md:min-h-[calc(100vh-8rem)] flex-shrink-0"
+          style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.07)' }}
+        >
           {/* Header — desktop only */}
-          <div className="hidden md:block p-6 mb-4">
-            <h2 className="text-xl font-serif text-cream-100">Admin Panel</h2>
-            <p className="text-xs text-cream-400 mt-1">{user?.email}</p>
+          <div className="hidden md:block p-6 mb-2">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-gold-500" />
+              <h2 className="text-xl font-serif text-cream-50">Admin Panel</h2>
+            </div>
+            <p className="text-xs text-cream-400 mt-1 truncate">{user?.email}</p>
           </div>
 
           {/* Mobile: horizontal scrollable tab row */}
-          <div className="flex md:hidden overflow-x-auto scrollbar-hide px-3 py-2 gap-1 border-t border-white/5">
+          <div className="flex md:hidden overflow-x-auto px-3 py-2 gap-1" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <MobileTab icon={<BarChart3 size={14}/>} label="Overview" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
             <MobileTab icon={<Inbox size={14}/>} label={`Queue (${pendingBookings.length})`} active={activeTab === 'queue'} onClick={() => setActiveTab('queue')} />
             <MobileTab icon={<Calendar size={14}/>} label="Calendar" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
@@ -104,7 +118,7 @@ export default function Admin() {
           </div>
 
           {/* Desktop: vertical nav */}
-          <nav className="hidden md:flex flex-col space-y-2 px-4">
+          <nav className="hidden md:flex flex-col space-y-1 px-3">
             <NavButton icon={<BarChart3 size={18}/>} label="Overview" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
             <NavButton icon={<Inbox size={18}/>} label={`Queue (${pendingBookings.length})`} active={activeTab === 'queue'} onClick={() => setActiveTab('queue')} />
             <NavButton icon={<Calendar size={18}/>} label="Calendar & Active" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
@@ -114,9 +128,9 @@ export default function Admin() {
             <NavButton icon={<Users size={18}/>} label="Admin Settings" active={activeTab === 'admins'} onClick={() => setActiveTab('admins')} />
           </nav>
 
-          <div className="hidden md:block mt-auto p-4 border-t border-white/5 mx-4 mt-6">
-            <button onClick={handleSignOut} className="flex items-center gap-3 text-cream-400 hover:text-red-400 text-sm transition-colors w-full p-2">
-              <LogOut size={18} /> Sign Out
+          <div className="hidden md:block p-3 mx-3 mt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <button onClick={handleSignOut} className="flex items-center gap-3 text-cream-400 hover:text-red-400 text-sm transition-colors w-full p-2 rounded-lg hover:bg-red-500/8">
+              <LogOut size={16} /> Sign Out
             </button>
           </div>
         </div>
@@ -378,9 +392,16 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
   return (
     <button 
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-sm transition-colors ${
-        active ? 'bg-gold-500/10 text-gold-400' : 'text-cream-400 hover:bg-white/5 hover:text-cream-200'
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all ${
+        active
+          ? 'text-gold-400 font-medium'
+          : 'text-cream-400 hover:bg-white/5 hover:text-cream-200'
       }`}
+      style={active ? {
+        background: 'rgba(201,168,76,0.08)',
+        borderLeft: '2px solid #c9a84c',
+        paddingLeft: 'calc(1rem - 2px)'
+      } : {}}
     >
       {icon} {label}
     </button>
@@ -391,9 +412,15 @@ function MobileTab({ icon, label, active, onClick }: { icon: React.ReactNode, la
   return (
     <button
       onClick={onClick}
-      className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-        active ? 'bg-gold-500/15 text-gold-400 border border-gold-500/30' : 'text-cream-400 hover:bg-white/5 hover:text-cream-200'
+      className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+        active ? 'text-gold-400' : 'text-cream-400 hover:text-cream-200'
       }`}
+      style={active ? {
+        background: 'rgba(201,168,76,0.1)',
+        border: '1px solid rgba(201,168,76,0.3)'
+      } : {
+        border: '1px solid transparent'
+      }}
     >
       {icon} {label}
     </button>
@@ -490,29 +517,34 @@ function QueueView({ pendingBookings, setNotification }: { pendingBookings: any[
 
   return (
     <motion.div initial={{opacity:0}} animate={{opacity:1}} className="relative">
-      <h2 className="text-2xl font-serif text-cream-100 mb-6">Pending Review</h2>
+      {/* Mobile sparkle near title */}
+      <div className="flex items-start gap-3 mb-6 relative">
+        <h2 className="text-2xl font-serif text-cream-50">Pending Review</h2>
+        <span className="sparkle sparkle-sm sparkle-twinkle sparkle-delay-1 sm:hidden" style={{ top: '4px', right: '0' }}>✦</span>
+      </div>
       {pendingBookings.length === 0 ? (
-        <p className="text-cream-400 bg-charcoal-800 p-8 rounded-md border border-white/5 text-center">No pending bookings at the moment.</p>
+        <p className="text-cream-400 p-8 rounded-xl text-center" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>No pending bookings at the moment.</p>
       ) : (
         <div className="space-y-4">
           {pendingBookings.map(b => (
-            <div key={b.id} className="bg-charcoal-800 border border-white/5 p-6 rounded-md flex flex-col md:flex-row justify-between gap-6">
+            <div key={b.id} className="rounded-xl flex flex-col md:flex-row justify-between gap-6 p-5" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.1)' }}>
               <div>
-                <div className="text-xs text-gold-400 uppercase mb-1">{b.eventType} &bull; {b.guestCount} Guests</div>
-                <h3 className="text-lg font-serif text-cream-100 mb-2">{b.eventDate ? format(new Date(b.eventDate), 'MMMM do, yyyy') : 'TBD'}</h3>
+                <div className="text-xs text-gold-400/80 uppercase tracking-wider mb-1">{b.eventType} &bull; {b.guestCount} Guests</div>
+                <h3 className="text-lg font-serif text-cream-50 mb-2">{b.eventDate ? format(new Date(b.eventDate), 'MMMM do, yyyy') : 'TBD'}</h3>
                 <div className="text-sm text-cream-400 space-y-1">
                   <p>Name: <span className="text-cream-200">{b.userName}</span></p>
                   <p>Phone: <span className="text-cream-200">{b.userPhone}</span></p>
-                  {b.notes && <p>Notes: <span className="italic">"{b.notes}"</span></p>}
+                  {b.notes && <p>Notes: <span className="italic text-cream-300">"{b.notes}"</span></p>}
                 </div>
               </div>
-              <div className="flex flex-col items-end justify-between border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6">
+              <div className="flex flex-col items-end justify-between pt-4 md:pt-0 md:pl-6" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="md:border-t-0 md:border-l" style={{ borderColor: 'rgba(255,255,255,0.07)' }}></div>
                 <div className="text-right mb-4">
-                  <p className="text-xs text-cream-400 uppercase">System Est.</p>
-                  <p className="text-xl text-cream-100 font-medium">₹{b.estimatedAmount?.toLocaleString()}</p>
+                  <p className="text-xs text-cream-400/70 uppercase tracking-wider">System Est.</p>
+                  <p className="text-xl text-cream-50 font-semibold">₹{b.estimatedAmount?.toLocaleString()}</p>
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
-                  <Button variant="outline" className="flex-1 md:flex-none border-red-500/50 text-red-400 hover:bg-red-500/10" onClick={() => startRejection(b)}>Reject</Button>
+                  <Button variant="outline" className="flex-1 md:flex-none border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-400/60" onClick={() => startRejection(b)}>Reject</Button>
                   <Button className="flex-1 md:flex-none" onClick={() => startApproval(b)}>Approve & Set Price</Button>
                 </div>
               </div>
@@ -523,30 +555,36 @@ function QueueView({ pendingBookings, setNotification }: { pendingBookings: any[
 
       {/* Price Configuration Modal */}
       {approvingBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-charcoal-800 border border-white/10 p-8 rounded-lg max-w-md w-full shadow-2xl animate-scale-in">
-            <h3 className="text-xl font-serif text-cream-100 mb-4">Approve Booking</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="p-8 rounded-2xl max-w-md w-full shadow-2xl" style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.12)' }}>
+            <h3 className="text-xl font-serif text-cream-50 mb-4">Approve Booking</h3>
             <p className="text-sm text-cream-400 mb-6">
-              Confirm or adjust the pricing for the event on <strong>{approvingBooking.eventDate ? format(new Date(approvingBooking.eventDate), 'MMMM do, yyyy') : 'TBD'}</strong>.
+              Confirm or adjust the pricing for the event on <strong className="text-cream-200">{approvingBooking.eventDate ? format(new Date(approvingBooking.eventDate), 'MMMM do, yyyy') : 'TBD'}</strong>.
             </p>
             
             <div className="space-y-4 mb-8">
               <div>
-                <label className="block text-xs uppercase tracking-wider text-cream-400 mb-2">Total Amount (₹)</label>
+                <label className="block text-xs uppercase tracking-wider text-cream-400/80 mb-2">Total Amount (₹)</label>
                 <input 
                   type="number" 
                   value={customTotal}
                   onChange={(e) => setCustomTotal(e.target.value)}
-                  className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 focus:outline-none focus:border-gold-500"
+                  className="w-full rounded-xl px-4 py-3 text-cream-100 transition-all focus:outline-none"
+                  style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.12)' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
                 />
               </div>
               <div>
-                <label className="block text-xs uppercase tracking-wider text-cream-400 mb-2">Advance Amount (₹)</label>
+                <label className="block text-xs uppercase tracking-wider text-cream-400/80 mb-2">Advance Amount (₹)</label>
                 <input 
                   type="number" 
                   value={customAdvance}
                   onChange={(e) => setCustomAdvance(e.target.value)}
-                  className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 focus:outline-none focus:border-gold-500"
+                  className="w-full rounded-xl px-4 py-3 text-cream-100 transition-all focus:outline-none"
+                  style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.12)' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
                 />
               </div>
               <div className="flex gap-4 mt-8">
@@ -560,21 +598,24 @@ function QueueView({ pendingBookings, setNotification }: { pendingBookings: any[
 
       {/* Rejection Modal */}
       {rejectingBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-charcoal-800 border border-white/10 p-8 rounded-lg max-w-md w-full shadow-2xl animate-scale-in">
-            <h3 className="text-xl font-serif text-cream-100 mb-4">Reject Booking</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="p-8 rounded-2xl max-w-md w-full shadow-2xl" style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.12)' }}>
+            <h3 className="text-xl font-serif text-cream-50 mb-4">Reject Booking</h3>
             <p className="text-sm text-cream-400 mb-6">
-              Please provide a reason for rejecting the booking on <strong>{rejectingBooking.eventDate ? format(new Date(rejectingBooking.eventDate), 'MMMM do, yyyy') : 'TBD'}</strong>. This will be shown to the customer.
+              Please provide a reason for rejecting the booking on <strong className="text-cream-200">{rejectingBooking.eventDate ? format(new Date(rejectingBooking.eventDate), 'MMMM do, yyyy') : 'TBD'}</strong>. This will be shown to the customer.
             </p>
             
             <div className="space-y-4 mb-8">
               <div>
-                <label className="block text-xs uppercase tracking-wider text-cream-400 mb-2">Rejection Reason</label>
+                <label className="block text-xs uppercase tracking-wider text-cream-400/80 mb-2">Rejection Reason</label>
                 <textarea 
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="e.g. Venue is under maintenance on this date."
-                  className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 focus:outline-none focus:border-red-500 h-24 resize-none"
+                  className="w-full rounded-xl px-4 py-3 text-cream-100 h-24 resize-none transition-all focus:outline-none custom-scrollbar"
+                  style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.12)' }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
                 />
               </div>
               <div className="flex gap-4 mt-8">
@@ -700,9 +741,9 @@ function ActiveBookingsView({ bookings, setNotification }: { bookings: any[], se
       </div>
 
       {confirmMarkPaidId && (
-        <div className="fixed inset-0 z-50 bg-charcoal-900/95 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-charcoal-800 border border-white/10 rounded-md p-6 max-w-sm w-full shadow-2xl">
-            <h3 className="text-xl font-serif text-cream-100 mb-2">Confirm Payment</h3>
+        <div className="fixed inset-0 z-50 backdrop-blur-md flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.8)' }}>
+          <div className="rounded-2xl p-6 max-w-sm w-full shadow-2xl" style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.12)' }}>
+            <h3 className="text-xl font-serif text-cream-50 mb-2">Confirm Payment</h3>
             <p className="text-sm text-cream-400 mb-6">
               Are you sure you want to mark the advance as paid for this booking? This will officially confirm their event.
             </p>
@@ -717,23 +758,26 @@ function ActiveBookingsView({ bookings, setNotification }: { bookings: any[], se
       {/* Mobile Layout (< 768px) */}
       <div className="md:hidden space-y-4">
         {bookings.map(b => (
-          <div key={b.id} className="bg-charcoal-800 border border-white/5 p-4 rounded-md shadow-lg">
+          <div key={b.id} className="rounded-xl p-4 shadow-lg" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="flex justify-between items-start mb-3">
               <div>
-                <p className="text-sm font-medium text-cream-200">{b.eventDate ? format(new Date(b.eventDate), 'MMM dd, yyyy') : 'TBD'}</p>
-                <p className="text-xs text-cream-400 mt-1">{b.userName} &bull; {b.userPhone}</p>
+                <p className="text-sm font-medium text-cream-100">{b.eventDate ? format(new Date(b.eventDate), 'MMM dd, yyyy') : 'TBD'}</p>
+                <p className="text-xs text-cream-400 mt-0.5">{b.userName} &bull; {b.userPhone}</p>
               </div>
-              <span className={`px-2 py-1 rounded-sm text-[10px] uppercase tracking-wider whitespace-nowrap ${
-                b.bookingStatus === 'awaiting_payment' ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20' :
-                b.bookingStatus === 'confirmed' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                'bg-white/10 text-cream-200 border border-white/20'
-              }`}>
+              <span
+                className={`px-2 py-1 rounded-md text-[10px] uppercase tracking-wider whitespace-nowrap font-medium`}
+                style={{
+                  background: b.bookingStatus === 'awaiting_payment' ? 'rgba(234,179,8,0.1)' : b.bookingStatus === 'confirmed' ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.06)',
+                  color: b.bookingStatus === 'awaiting_payment' ? '#fbbf24' : b.bookingStatus === 'confirmed' ? '#4ade80' : '#d9cdb5',
+                  border: `1px solid ${ b.bookingStatus === 'awaiting_payment' ? 'rgba(234,179,8,0.3)' : b.bookingStatus === 'confirmed' ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.15)' }`,
+                }}
+              >
                 {b.bookingStatus.replace('_', ' ')}
               </span>
             </div>
             
-            <div className="text-xs text-cream-400 mb-4 bg-charcoal-900/50 p-3 rounded border border-white/5 space-y-2">
-              <div className="flex justify-between border-b border-white/5 pb-2">
+            <div className="text-xs text-cream-400 mb-4 p-3 rounded-lg space-y-2" style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
                 <span>Event</span>
                 <span className="text-cream-200">{b.eventType} ({b.guestCount} Guests)</span>
               </div>
@@ -751,23 +795,21 @@ function ActiveBookingsView({ bookings, setNotification }: { bookings: any[], se
           </div>
         ))}
         {bookings.length === 0 && (
-          <div className="bg-charcoal-800 p-8 rounded-md text-center border border-white/5 text-cream-400">
-            No active bookings.
-          </div>
+          <div className="p-8 rounded-xl text-center text-cream-400" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>No active bookings.</div>
         )}
       </div>
 
       {/* Desktop Layout (>= 768px) */}
       <div className="hidden md:block">
         {selectedIds.length > 0 && (
-          <div className="bg-charcoal-800 border border-white/5 p-4 rounded-md mb-4 flex justify-between items-center">
+          <div className="p-4 rounded-xl mb-4 flex justify-between items-center" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.1)' }}>
             <span className="text-sm text-cream-200">{selectedIds.length} selected</span>
             <Button size="sm" variant="outline" onClick={handleBulkExportCSV}>Export to CSV</Button>
           </div>
         )}
-        <div className="bg-charcoal-800 border border-white/5 rounded-md overflow-hidden">
+        <div className="rounded-xl overflow-hidden" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.1)' }}>
           <table className="w-full text-left text-sm">
-            <thead className="bg-charcoal-900/50 text-cream-400 uppercase text-xs">
+            <thead style={{ background: '#0d0d0d', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               <tr>
                 <th className="p-4 w-12">
                   <input 
@@ -777,16 +819,19 @@ function ActiveBookingsView({ bookings, setNotification }: { bookings: any[], se
                     className="accent-gold-400 cursor-pointer"
                   />
                 </th>
-                <th className="p-4 font-medium">Date</th>
-                <th className="p-4 font-medium">Customer</th>
-                <th className="p-4 font-medium">Event</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4 font-medium text-right">Actions</th>
+                <th className="p-4 text-xs text-cream-400 uppercase tracking-wider font-medium">Date</th>
+                <th className="p-4 text-xs text-cream-400 uppercase tracking-wider font-medium">Customer</th>
+                <th className="p-4 text-xs text-cream-400 uppercase tracking-wider font-medium">Event</th>
+                <th className="p-4 text-xs text-cream-400 uppercase tracking-wider font-medium">Status</th>
+                <th className="p-4 text-xs text-cream-400 uppercase tracking-wider font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
               {bookings.map(b => (
-                <tr key={b.id} className="text-cream-200 hover:bg-charcoal-700/30 transition-colors">
+                <tr key={b.id} className="text-cream-200 transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                  onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = 'rgba(255,255,255,0.03)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'}
+                >
                   <td className="p-4">
                     <input 
                       type="checkbox" 
@@ -972,32 +1017,26 @@ function OverviewView({ bookings }: { bookings: any[] }) {
 
   return (
     <motion.div initial={{opacity:0}} animate={{opacity:1}}>
-      <h2 className="text-2xl font-serif text-cream-100 mb-6">Dashboard Overview</h2>
+      <div className="flex items-start gap-3 mb-6 relative">
+        <h2 className="text-2xl font-serif text-cream-50">Dashboard Overview</h2>
+        <span className="sparkle sparkle-sm sparkle-float sparkle-delay-1 sm:hidden" style={{ top: '4px', right: '0' }}>✦</span>
+        <span className="sparkle sparkle-sm sparkle-twinkle sm:hidden" style={{ top: '-2px', right: '14px' }}>◆</span>
+      </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-charcoal-800 border border-white/5 p-6 rounded-md shadow-lg">
-          <p className="text-sm text-cream-400 uppercase tracking-wider mb-2">Monthly Revenue</p>
-          <p className="text-3xl font-serif text-gold-400">₹{revenue.toLocaleString()}</p>
-          <p className="text-xs text-cream-400/50 mt-2">Confirmed bookings for this month</p>
-        </div>
-
-        <div className="bg-charcoal-800 border border-white/5 p-6 rounded-md shadow-lg">
-          <p className="text-sm text-cream-400 uppercase tracking-wider mb-2">Pending Approvals</p>
-          <p className="text-3xl font-serif text-blue-400">{pendingCount}</p>
-          <p className="text-xs text-cream-400/50 mt-2">Awaiting owner review</p>
-        </div>
-
-        <div className="bg-charcoal-800 border border-white/5 p-6 rounded-md shadow-lg">
-          <p className="text-sm text-cream-400 uppercase tracking-wider mb-2">Awaiting Payment</p>
-          <p className="text-3xl font-serif text-yellow-500">{awaitingPaymentCount}</p>
-          <p className="text-xs text-cream-400/50 mt-2">Approved but not paid</p>
-        </div>
-
-        <div className="bg-charcoal-800 border border-white/5 p-6 rounded-md shadow-lg">
-          <p className="text-sm text-cream-400 uppercase tracking-wider mb-2">Upcoming Events</p>
-          <p className="text-3xl font-serif text-green-400">{upcomingCount}</p>
-          <p className="text-xs text-cream-400/50 mt-2">Approved & confirmed future events</p>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: 'Monthly Revenue', value: `₹${revenue.toLocaleString()}`, sub: 'Confirmed bookings for this month', color: '#e8c96d', accent: 'rgba(201,168,76,0.15)' },
+          { label: 'Pending Approvals', value: pendingCount, sub: 'Awaiting owner review', color: '#60a5fa', accent: 'rgba(96,165,250,0.1)' },
+          { label: 'Awaiting Payment', value: awaitingPaymentCount, sub: 'Approved but not paid', color: '#fbbf24', accent: 'rgba(251,191,36,0.1)' },
+          { label: 'Upcoming Events', value: upcomingCount, sub: 'Approved & confirmed future events', color: '#4ade80', accent: 'rgba(74,222,128,0.1)' },
+        ].map((card) => (
+          <div key={card.label} className="rounded-xl p-5 shadow-lg relative overflow-hidden" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.09)' }}>
+            <div className="absolute top-0 inset-x-0 h-px" style={{ background: card.accent.replace('0.1', '0.6').replace('0.15', '0.8') }} />
+            <p className="text-xs text-cream-400/80 uppercase tracking-wider mb-2">{card.label}</p>
+            <p className="text-3xl font-serif font-semibold" style={{ color: card.color }}>{card.value}</p>
+            <p className="text-xs text-cream-400/50 mt-2">{card.sub}</p>
+          </div>
+        ))}
       </div>
     </motion.div>
   )

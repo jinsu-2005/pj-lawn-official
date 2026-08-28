@@ -10,10 +10,13 @@ export default {
         // Charcoal backgrounds
         charcoal: {
           900: '#0a0a0a',
-          800: '#111111',
-          700: '#1a1a1a',
-          600: '#242424',
-          500: '#2e2e2e',
+          850: '#111111',
+          800: '#161616',
+          750: '#1c1c1c',
+          700: '#222222',
+          650: '#282828',
+          600: '#2e2e2e',
+          500: '#383838',
         },
         // Warm gold accents
         gold: {
@@ -52,13 +55,16 @@ export default {
         'display-sm':  ['1.875rem',{ lineHeight: '1.25' }],
       },
       backgroundImage: {
-        'gold-gradient': 'linear-gradient(135deg, #c9a84c 0%, #e8c96d 50%, #c9a84c 100%)',
+        'gold-gradient': 'linear-gradient(135deg, #FFF6D6 0%, #F8DF8C 45%, #E6C25B 75%, #FFF0AA 100%)',
         'dark-gradient': 'linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0.7) 60%, rgba(10,10,10,0.95) 100%)',
       },
       animation: {
         'fade-in': 'fadeIn 0.8s ease-out forwards',
         'slide-up': 'slideUp 0.8s ease-out forwards',
         'shimmer': 'shimmer 2s infinite',
+        'sparkle-twinkle': 'sparkleTwinkle 3s ease-in-out infinite',
+        'sparkle-float': 'sparkleFloat 4s ease-in-out infinite',
+        'chat-pulse': 'chatPulse 2.5s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -72,6 +78,18 @@ export default {
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
+        },
+        sparkleTwinkle: {
+          '0%, 100%': { opacity: '0.15', transform: 'scale(0.8) rotate(0deg)' },
+          '50%': { opacity: '0.45', transform: 'scale(1.1) rotate(15deg)' },
+        },
+        sparkleFloat: {
+          '0%, 100%': { opacity: '0.12', transform: 'translateY(0px) rotate(0deg)' },
+          '50%': { opacity: '0.35', transform: 'translateY(-3px) rotate(20deg)' },
+        },
+        chatPulse: {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(201, 168, 76, 0.4)' },
+          '50%': { boxShadow: '0 0 0 8px rgba(201, 168, 76, 0)' },
         },
       },
       transitionTimingFunction: {
