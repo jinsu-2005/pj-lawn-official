@@ -565,7 +565,7 @@ export default function Booking() {
                     </div>
                     <a 
                       href="tel:+919489724975" 
-                      className="inline-flex items-center gap-2 px-6 py-3.5 bg-gold-400 hover:bg-gold-300 text-charcoal-950 text-sm font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-gold-500/10 active:scale-95 transition-all shrink-0"
+                      className="inline-flex items-center gap-2 px-6 py-3.5 bg-gold-400 hover:bg-gold-300 text-black !text-black text-sm font-black uppercase tracking-wider rounded-full shadow-lg shadow-gold-500/10 active:scale-95 transition-all shrink-0"
                     >
                       📞 Call +91 94897 24975
                     </a>
