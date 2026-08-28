@@ -4,7 +4,8 @@ import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
 import { Button } from '@/components/ui/Button'
 
 export default function Location() {
-  const mapUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3949.4215286282823!2d77.41261!3d8.17810!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b04f1a2c2b6f123%3A0x1234567890abcdef!2sGandhi%20Nagar%2C%20Kurusady%2C%20Nagercoil%2C%20Tamil%20Nadu%20629004!5e0!3m2!1sen!2sin!4v1680000000000!5m2!1sen!2sin"
+  const mapUrl = "https://maps.google.com/maps?q=PJ+Lawn+Paul+Vathiyar+Compound+Gandhi+Nagar+Nagercoil&output=embed&z=17"
+  const directionsUrl = "https://maps.app.goo.gl/mcK4uRMVUW4g8uxRA"
 
   return (
     <div className="pt-32 pb-24 min-h-screen">
@@ -48,7 +49,7 @@ export default function Location() {
                   Nagercoil, Tamil Nadu 629004
                 </p>
                 <a 
-                  href="https://goo.gl/maps/placeholder" 
+                  href={directionsUrl}
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-gold-400 text-sm mt-3 hover:text-gold-300 transition-colors"
