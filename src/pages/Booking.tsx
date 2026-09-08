@@ -20,7 +20,7 @@ const bookingSchema = z.object({
   phone: z.string().min(10, 'Valid phone number is required'),
   email: z.string().email('Valid email is required').optional().or(z.literal('')),
   eventType: z.string().min(1, 'Event type is required'),
-  timeSlot: z.string().min(1, 'Time slot is required'),
+  timeSlot: z.string(),
   guestCount: z.number().min(10, 'Minimum 10 guests').max(300, 'Maximum 300 guests'),
   notes: z.string().optional()
 })
@@ -41,7 +41,7 @@ export default function Booking() {
     defaultValues: {
       guestCount: 100,
       eventType: 'Birthday Party',
-      timeSlot: 'Evening (4:00 PM – 10:00 PM)'
+      timeSlot: '5:00 PM – 10:00 PM'
     },
     mode: 'onChange'
   })
@@ -66,7 +66,6 @@ export default function Booking() {
   const watchName = watch('name')
   const watchPhone = watch('phone')
   const watchEventType = watch('eventType')
-  const watchTimeSlot = watch('timeSlot')
 
   // Tomorrow's date at 00:00:00 (booking starts after today)
   const tomorrow = new Date()
@@ -180,7 +179,7 @@ export default function Booking() {
         userEmail: data.email || user.email || '',
         userPhone: data.phone,
         eventType: data.eventType,
-        timeSlot: data.timeSlot || 'Evening (4:00 PM – 10:00 PM)',
+        timeSlot: data.timeSlot || '5:00 PM – 10:00 PM',
         eventDate: data.date,
         guestCount: data.guestCount,
         notes: data.notes || '',
@@ -203,7 +202,7 @@ export default function Booking() {
               customerEmail: data.email || user.email || '',
               eventDate: data.date,
               eventType: data.eventType,
-              timeSlot: data.timeSlot || 'Evening (4:00 PM – 10:00 PM)',
+              timeSlot: data.timeSlot || '5:00 PM – 10:00 PM',
               guestCount: data.guestCount,
               notes: data.notes || '',
               estimatedPrice: estimatedPrice || 15000
@@ -564,12 +563,12 @@ export default function Booking() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Time Slot</label>
-                        <select {...register('timeSlot')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-3 py-3 text-cream-200 text-xs sm:text-sm appearance-none focus:outline-none focus:border-gold-400/50">
-                          <option value="Evening (4:00 PM – 10:00 PM)">Evening (4:00 PM – 10:00 PM)</option>
-                          <option value="Morning (8:00 AM – 2:00 PM)">Morning (8:00 AM – 2:00 PM)</option>
-                          <option value="Full Day (8:00 AM – 10:00 PM)">Full Day (8:00 AM – 10:00 PM)</option>
-                        </select>
+                        <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Timing (Fixed)</label>
+                        <div className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 text-xs sm:text-sm flex items-center justify-between">
+                          <span className="font-semibold text-gold-400">5:00 PM – 10:00 PM</span>
+                          <span className="text-[10px] text-cream-400/70 font-mono tracking-wider uppercase bg-white/5 px-2 py-0.5 rounded">Always 5 to 10 PM</span>
+                        </div>
+                        <input type="hidden" {...register('timeSlot')} value="5:00 PM – 10:00 PM" />
                       </div>
 
                       <div className="space-y-2">
@@ -616,7 +615,7 @@ export default function Booking() {
                     <p className="text-xs text-cream-400 mb-2">Want to skip forms and discuss on WhatsApp directly?</p>
                     <a
                       href={`https://wa.me/919489724975?text=${encodeURIComponent(
-                        `Hi PJ Lawn! I would like to inquire about booking for ${watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : 'an upcoming date'} for a ${watchEventType || 'function'} (${watchTimeSlot || 'Evening'}, approx ${watchGuestCount || 100} guests). Name: ${watchName || 'Guest'}, Phone: ${watchPhone || ''}.`
+                        `Hi PJ Lawn! I would like to inquire about booking for ${watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : 'an upcoming date'} for a ${watchEventType || 'function'} (5:00 PM – 10:00 PM, approx ${watchGuestCount || 100} guests). Name: ${watchName || 'Guest'}, Phone: ${watchPhone || ''}.`
                       )}`}
                       target="_blank"
                       rel="noreferrer"
@@ -682,7 +681,7 @@ export default function Booking() {
                       </a>
                       <a 
                         href={`https://wa.me/919489724975?text=${encodeURIComponent(
-                          `Hi PJ Lawn, I just submitted a booking request for ${watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : 'my event'} (${watchEventType}, ${watchTimeSlot}). Name: ${watchName}. Please review my request!`
+                          `Hi PJ Lawn, I just submitted a booking request for ${watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : 'my event'} (${watchEventType}, 5:00 PM – 10:00 PM). Name: ${watchName}. Please review my request!`
                         )}`}
                         target="_blank"
                         rel="noreferrer"
@@ -718,8 +717,8 @@ export default function Booking() {
                 <div className="flex gap-3">
                   <Clock className="text-gold-400 shrink-0 w-5 h-5 mt-0.5" />
                   <div>
-                    <p className="text-cream-200 text-sm font-medium">Time</p>
-                    <p className="text-cream-400 text-sm">{watchTimeSlot || 'Evening (4:00 PM – 10:00 PM)'}</p>
+                    <p className="text-cream-200 text-sm font-medium">Timing</p>
+                    <p className="text-cream-400 text-sm">5:00 PM – 10:00 PM</p>
                   </div>
                 </div>
                 

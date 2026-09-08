@@ -344,7 +344,7 @@ function AddBookingModal({
   const [userPhone, setUserPhone] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [eventType, setEventType] = useState('Birthday Party')
-  const [timeSlot, setTimeSlot] = useState('Evening (4:00 PM – 10:00 PM)')
+  const timeSlot = '5:00 PM – 10:00 PM'
   const [guestCount, setGuestCount] = useState<number>(100)
   const [totalAmount, setTotalAmount] = useState<number>(15000)
   const [advancePaid, setAdvancePaid] = useState<number>(5000)
@@ -446,16 +446,11 @@ function AddBookingModal({
               />
             </div>
             <div>
-              <label className="text-[10px] uppercase tracking-wider text-cream-400 font-bold block mb-1">Time Slot *</label>
-              <select
-                value={timeSlot}
-                onChange={e => setTimeSlot(e.target.value)}
-                className="w-full bg-[#0d0d0d] border border-white/10 rounded-lg px-3 py-2 text-xs text-cream-100 focus:outline-none focus:border-gold-400/50"
-              >
-                <option value="Evening (4:00 PM – 10:00 PM)">Evening (4:00 PM – 10:00 PM)</option>
-                <option value="Morning (8:00 AM – 2:00 PM)">Morning (8:00 AM – 2:00 PM)</option>
-                <option value="Full Day (8:00 AM – 10:00 PM)">Full Day (8:00 AM – 10:00 PM)</option>
-              </select>
+              <label className="text-[10px] uppercase tracking-wider text-cream-400 font-bold block mb-1">Timing (Fixed)</label>
+              <div className="w-full bg-[#0d0d0d] border border-white/10 rounded-lg px-3 py-2 text-xs text-gold-400 font-semibold flex items-center justify-between">
+                <span>5:00 PM – 10:00 PM</span>
+                <span className="text-[10px] text-cream-400/60 font-mono uppercase">Standard</span>
+              </div>
             </div>
           </div>
 

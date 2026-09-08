@@ -199,7 +199,7 @@ function getCashfreeInstance(mode: 'sandbox' | 'production' = 'sandbox') {
     }
   }
 
-  const handleWhatsAppConcierge = (booking: any) => {
+  const handleWhatsAppSupport = (booking: any) => {
     const phone = "919489724975"
     const formattedDate = booking.eventDate ? format(new Date(`${booking.eventDate}T00:00:00`), 'dd MMM yyyy') : 'TBD'
     const message = `Hello PJ Lawn Management! I am reaching out regarding my booking.\n\n` +
@@ -473,13 +473,13 @@ function getCashfreeInstance(mode: 'sandbox' | 'production' = 'sandbox') {
                         </button>
                       )}
 
-                      {/* 1-Tap WhatsApp Concierge Trigger */}
+                      {/* 1-Tap WhatsApp Manager Trigger */}
                       <button
-                        onClick={() => handleWhatsAppConcierge(booking)}
+                        onClick={() => handleWhatsAppSupport(booking)}
                         className="flex items-center justify-center gap-2 py-3.5 px-5 rounded-xl text-sm font-semibold text-green-400 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 transition-all"
                       >
                         <MessageCircle size={17} />
-                        <span>Message Venue Concierge</span>
+                        <span>Message Venue Manager</span>
                       </button>
 
                       {/* Receipt Download */}
@@ -494,7 +494,7 @@ function getCashfreeInstance(mode: 'sandbox' | 'production' = 'sandbox') {
                     </div>
 
                     <p className="text-[11px] text-cream-400/50 mt-4 text-center sm:text-left leading-relaxed">
-                      * Remaining balance can be settled online or in person on the event day. Need to adjust timings or guest count? Message our concierge anytime.
+                      * Remaining balance can be settled online or in person on the event day. Need to adjust timings or guest count? Message our manager on WhatsApp anytime.
                     </p>
                   </div>
                 </motion.div>
@@ -650,7 +650,7 @@ function BookingStatusMessage({ booking }: { booking: any }) {
     return (
       <div className="bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl mb-3">
         <p className="text-red-400 text-sm font-semibold mb-0.5">Date Unavailable</p>
-        <p className="text-cream-400 text-xs leading-relaxed">{booking.rejectionReason || 'Unfortunately, this date is unavailable. Please choose another date or connect with our concierge.'}</p>
+        <p className="text-cream-400 text-xs leading-relaxed">{booking.rejectionReason || 'Unfortunately, this date is unavailable. Please choose another date or contact our team directly on WhatsApp.'}</p>
         <Button to="/book" variant="outline" size="sm" className="mt-2.5">Choose Another Date</Button>
       </div>
     )
@@ -683,7 +683,7 @@ function BookingStatusMessage({ booking }: { booking: any }) {
         <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
         <div>
           <p className="text-green-400 text-sm font-semibold">Reservation Confirmed ✓</p>
-          <p className="text-cream-300 text-xs leading-relaxed">Your venue slot is secured. Feel free to contact our venue concierge below for site visits or coordination.</p>
+          <p className="text-cream-300 text-xs leading-relaxed">Your venue slot is secured. Feel free to message our venue manager below for site visits or coordination.</p>
         </div>
       </div>
     )
