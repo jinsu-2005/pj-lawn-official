@@ -3,7 +3,7 @@ import { MapPin, Phone, Navigation } from 'lucide-react'
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
 
 export default function Location() {
-  const mapUrl = "https://maps.google.com/maps?q=PJ+Lawn+Paul+Vathiyar+Compound+Gandhi+Nagar+Nagercoil&output=embed&z=17"
+  const mapUrl = "https://maps.google.com/maps?q=PJ+Lawn+Paul+Vathiyar+Compound+Gandhi+Nagar+Nagercoil&t=k&z=17&output=embed"
   const directionsUrl = "https://maps.app.goo.gl/mcK4uRMVUW4g8uxRA"
 
   return (
@@ -85,6 +85,7 @@ export default function Location() {
             initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.2 }}
             className="lg:col-span-8 aspect-square md:aspect-video lg:aspect-auto lg:h-[600px] bg-charcoal-900 border border-white/10 rounded-2xl overflow-hidden order-1 lg:order-2 relative shadow-2xl"
           >
+
             <div className="absolute top-4 right-4 z-20">
               <a
                 href={directionsUrl}

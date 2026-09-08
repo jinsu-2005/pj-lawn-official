@@ -13,12 +13,17 @@ interface GalleryItem {
 }
 
 const defaultGalleryItems: GalleryItem[] = [
-  { id: 'def-3', src: '/gallery/3.webp', alt: 'PJ Lawn' },
-  { id: 'def-1', src: '/gallery/1.webp', alt: 'PJ Lawn' },
-  { id: 'def-4', src: '/gallery/4.webp', alt: 'PJ Lawn' },
-  { id: 'def-2', src: '/gallery/2.webp', alt: 'PJ Lawn' },
-  { id: 'def-5', src: '/gallery/5.webp', alt: 'PJ Lawn' },
-  { id: 'def-6', src: '/gallery/6.webp', alt: 'PJ Lawn' },
+  { id: 'def-3', src: '/gallery/3.webp', alt: 'PJ Lawn - Illuminated Evening Ambience' },
+  { id: 'def-1', src: '/gallery/1.webp', alt: 'PJ Lawn - Open-Air Event Setup' },
+  { id: 'def-7', src: '/gallery/7.webp', alt: 'PJ Lawn - Grand Celebrations & Lawn Panorama' },
+  { id: 'def-4', src: '/gallery/4.webp', alt: 'PJ Lawn - Premium Buffet & Banquet Dining' },
+  { id: 'def-8', src: '/gallery/8.webp', alt: 'PJ Lawn - Elegant Stage & Festive Décor' },
+  { id: 'def-2', src: '/gallery/2.webp', alt: 'PJ Lawn - Spacious Green Grounds' },
+  { id: 'def-9', src: '/gallery/9.webp', alt: 'PJ Lawn - Luxury Seating & Table Arrangements' },
+  { id: 'def-5', src: '/gallery/5.webp', alt: 'PJ Lawn - Grand Entrance & Welcome Area' },
+  { id: 'def-10', src: '/gallery/10.webp', alt: 'PJ Lawn - Night Lighting & Canopy Setup' },
+  { id: 'def-6', src: '/gallery/6.webp', alt: 'PJ Lawn - Private Banquet & Dressing Suites' },
+  { id: 'def-11', src: '/gallery/11.webp', alt: 'PJ Lawn - Scenic Landscape & Gathering View' },
 ]
 
 export default function Gallery() {

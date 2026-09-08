@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, Users, Clock, Info, CheckCircle2 } from 'lucide-react'
+import { Calendar, Users, Clock, Info, CheckCircle2, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -20,7 +20,8 @@ const bookingSchema = z.object({
   phone: z.string().min(10, 'Valid phone number is required'),
   email: z.string().email('Valid email is required').optional().or(z.literal('')),
   eventType: z.string().min(1, 'Event type is required'),
-  guestCount: z.number().min(50, 'Minimum 50 guests').max(300, 'Maximum 300 guests'),
+  timeSlot: z.string().min(1, 'Time slot is required'),
+  guestCount: z.number().min(10, 'Minimum 10 guests').max(300, 'Maximum 300 guests'),
   notes: z.string().optional()
 })
 
@@ -39,7 +40,8 @@ export default function Booking() {
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       guestCount: 100,
-      eventType: 'Birthday Party'
+      eventType: 'Birthday Party',
+      timeSlot: 'Evening (4:00 PM – 10:00 PM)'
     },
     mode: 'onChange'
   })
@@ -63,6 +65,8 @@ export default function Booking() {
   const watchGuestCount = watch('guestCount')
   const watchName = watch('name')
   const watchPhone = watch('phone')
+  const watchEventType = watch('eventType')
+  const watchTimeSlot = watch('timeSlot')
 
   // Tomorrow's date at 00:00:00 (booking starts after today)
   const tomorrow = new Date()
@@ -176,6 +180,7 @@ export default function Booking() {
         userEmail: data.email || user.email || '',
         userPhone: data.phone,
         eventType: data.eventType,
+        timeSlot: data.timeSlot || 'Evening (4:00 PM – 10:00 PM)',
         eventDate: data.date,
         guestCount: data.guestCount,
         notes: data.notes || '',
@@ -198,6 +203,7 @@ export default function Booking() {
               customerEmail: data.email || user.email || '',
               eventDate: data.date,
               eventType: data.eventType,
+              timeSlot: data.timeSlot || 'Evening (4:00 PM – 10:00 PM)',
               guestCount: data.guestCount,
               notes: data.notes || '',
               estimatedPrice: estimatedPrice || 15000
@@ -497,8 +503,20 @@ export default function Booking() {
                     {errors.date && <p className="text-red-400 text-sm mt-2">{errors.date.message}</p>}
                   </div>
 
-                  <div className="flex justify-end">
-                    <Button type="button" onClick={handleNextStep}>Continue to Details</Button>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+                    <a
+                      href={`https://wa.me/919489724975?text=${encodeURIComponent(
+                        watchDate 
+                          ? `Hi PJ Lawn! I am checking date availability for ${format(new Date(watchDate), 'MMMM do, yyyy')}. Could you assist with booking details?`
+                          : `Hi PJ Lawn! I am looking to book your lawn for an event and would like to check available dates.`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    >
+                      <MessageCircle size={14} /> Inquire via WhatsApp
+                    </a>
+                    <Button type="button" onClick={handleNextStep} className="w-full sm:w-auto">Continue to Details</Button>
                   </div>
                 </motion.div>
               )}
@@ -528,10 +546,10 @@ export default function Booking() {
                       {errors.email && <p className="text-red-400 text-xs">{errors.email.message}</p>}
                     </div>
                     
-                    <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="grid sm:grid-cols-3 gap-5">
                       <div className="space-y-2">
                         <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Event Type</label>
-                        <select {...register('eventType')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 appearance-none">
+                        <select {...register('eventType')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-3 py-3 text-cream-200 text-xs sm:text-sm appearance-none focus:outline-none focus:border-gold-400/50">
                           <option value="Birthday Party">Birthday Party</option>
                           <option value="Anniversary">Anniversary</option>
                           <option value="Family Function">Family Function</option>
@@ -544,9 +562,19 @@ export default function Booking() {
                           <option value="Other">Other</option>
                         </select>
                       </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Time Slot</label>
+                        <select {...register('timeSlot')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-3 py-3 text-cream-200 text-xs sm:text-sm appearance-none focus:outline-none focus:border-gold-400/50">
+                          <option value="Evening (4:00 PM – 10:00 PM)">Evening (4:00 PM – 10:00 PM)</option>
+                          <option value="Morning (8:00 AM – 2:00 PM)">Morning (8:00 AM – 2:00 PM)</option>
+                          <option value="Full Day (8:00 AM – 10:00 PM)">Full Day (8:00 AM – 10:00 PM)</option>
+                        </select>
+                      </div>
+
                       <div className="space-y-2">
                         <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Estimated Guests</label>
-                        <input type="number" {...register('guestCount', { valueAsNumber: true })} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200" />
+                        <input type="number" {...register('guestCount', { valueAsNumber: true })} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 text-xs sm:text-sm focus:outline-none focus:border-gold-400/50" />
                         {errors.guestCount && <p className="text-red-400 text-xs">{errors.guestCount.message}</p>}
                       </div>
                     </div>
@@ -582,6 +610,20 @@ export default function Booking() {
                     <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
                       {isSubmitting ? 'Submitting...' : currentUser ? 'Submit Booking Request' : 'Continue with Google to Book'}
                     </Button>
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t border-white/10 flex flex-col items-center">
+                    <p className="text-xs text-cream-400 mb-2">Want to skip forms and discuss on WhatsApp directly?</p>
+                    <a
+                      href={`https://wa.me/919489724975?text=${encodeURIComponent(
+                        `Hi PJ Lawn! I would like to inquire about booking for ${watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : 'an upcoming date'} for a ${watchEventType || 'function'} (${watchTimeSlot || 'Evening'}, approx ${watchGuestCount || 100} guests). Name: ${watchName || 'Guest'}, Phone: ${watchPhone || ''}.`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-green-400 hover:text-green-300 flex items-center gap-1.5 font-bold transition-colors"
+                    >
+                      <MessageCircle size={14} /> Send Booking Inquiry via WhatsApp &rarr;
+                    </a>
                   </div>
                 </motion.div>
               )}
@@ -629,14 +671,26 @@ export default function Booking() {
                   <div className="mt-8 mb-8 p-6 bg-gold-500/5 border border-gold-500/20 rounded-xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
                     <div>
                       <h4 className="text-gold-400 font-serif text-lg font-bold mb-1">Want Instant Review?</h4>
-                      <p className="text-cream-300 text-sm">Call us immediately to bypass the 2-hour review wait and lock in your date right away.</p>
+                      <p className="text-cream-300 text-sm">Call us or ping on WhatsApp to bypass the review wait and lock in your date right away.</p>
                     </div>
-                    <a 
-                      href="tel:+919489724975" 
-                      className="inline-flex items-center gap-2 px-6 py-3.5 bg-gold-400 hover:bg-gold-300 text-black !text-black text-sm font-black uppercase tracking-wider rounded-full shadow-lg shadow-gold-500/10 active:scale-95 transition-all shrink-0"
-                    >
-                      📞 Call +91 94897 24975
-                    </a>
+                    <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                      <a 
+                        href="tel:+919489724975" 
+                        className="inline-flex items-center gap-2 px-5 py-3 bg-gold-400 hover:bg-gold-300 text-black !text-black text-xs font-black uppercase tracking-wider rounded-full shadow-lg shadow-gold-500/10 active:scale-95 transition-all"
+                      >
+                        📞 Call
+                      </a>
+                      <a 
+                        href={`https://wa.me/919489724975?text=${encodeURIComponent(
+                          `Hi PJ Lawn, I just submitted a booking request for ${watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : 'my event'} (${watchEventType}, ${watchTimeSlot}). Name: ${watchName}. Please review my request!`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 px-5 py-3 bg-green-500 hover:bg-green-400 text-black !text-black text-xs font-black uppercase tracking-wider rounded-full shadow-lg shadow-green-500/10 active:scale-95 transition-all"
+                      >
+                        <MessageCircle size={14} /> WhatsApp
+                      </a>
+                    </div>
                   </div>
 
                   <div className="text-center">
@@ -665,7 +719,7 @@ export default function Booking() {
                   <Clock className="text-gold-400 shrink-0 w-5 h-5 mt-0.5" />
                   <div>
                     <p className="text-cream-200 text-sm font-medium">Time</p>
-                    <p className="text-cream-400 text-sm">5:00 PM – 10:00 PM</p>
+                    <p className="text-cream-400 text-sm">{watchTimeSlot || 'Evening (4:00 PM – 10:00 PM)'}</p>
                   </div>
                 </div>
                 

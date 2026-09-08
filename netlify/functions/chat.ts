@@ -1,4 +1,4 @@
-import { Handler } from '@netlify/functions';
+import type { Handler } from '@netlify/functions';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { GoogleGenAI } from '@google/genai';
@@ -79,109 +79,134 @@ async function fetchChatbotSettings(): Promise<string> {
   return DEFAULT_PROMPT;
 }
 
-// Initialize Gemini API
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || ''
-});
 
+
+async function processChatMessage(message: string, history: any[] = []) {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is missing');
+  }
+
+  // Initialize cache if it doesn't exist
+  if (!global.promptCache) {
+    global.promptCache = {
+      systemInstruction: '',
+      lastFetched: 0
+    };
+  }
+
+  const CACHE_TTL = 30 * 1000; // 30 seconds cache
+  const now = Date.now();
+
+  if (now - global.promptCache.lastFetched > CACHE_TTL || !global.promptCache.systemInstruction) {
+    global.promptCache.systemInstruction = await fetchChatbotSettings();
+    global.promptCache.lastFetched = now;
+  }
+
+  const systemInstruction = global.promptCache.systemInstruction;
+
+  // Prepare contents
+  const contents: any[] = [];
+  if (Array.isArray(history)) {
+    history.forEach((msg: any) => {
+      contents.push({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+      });
+    });
+  }
+  
+  contents.push({
+    role: 'user',
+    parts: [{ text: message }]
+  });
+
+  const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY
+  });
+
+  const fallbackModels = [
+    'gemini-flash-latest',
+    'gemini-flash-lite-latest',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
+    'gemini-3.7-flash',
+  ];
+
+  let response;
+  let lastError;
+
+  for (const model of fallbackModels) {
+    try {
+      response = await ai.models.generateContent({
+        model: model,
+        contents: contents,
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.7,
+        }
+      });
+      break;
+    } catch (err: any) {
+      console.warn(`Chatbot model ${model} failed:`, err?.message || err);
+      lastError = err;
+    }
+  }
+
+  if (!response) {
+    throw lastError || new Error('All available AI models failed to respond due to quota or server errors.');
+  }
+
+  return response.text;
+}
+
+// Netlify Functions v2 (Standard Web API)
+export default async function (req: Request, context: any) {
+  if (req.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
+
+  try {
+    const { message, history } = await req.json();
+    if (!message) {
+      return new Response(JSON.stringify({ error: 'Message is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const text = await processChatMessage(message, history);
+    return new Response(JSON.stringify({ text }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error: any) {
+    console.error('Chat error:', error);
+    return new Response(JSON.stringify({ error: error.message || 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// Netlify Functions v1 (Legacy Lambda compatibility)
 export const handler: Handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is missing');
-    }
-
     const { message, history } = JSON.parse(event.body || '{}');
-    
     if (!message) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Message is required' }) };
     }
 
-    // Initialize cache if it doesn't exist
-    if (!global.promptCache) {
-      global.promptCache = {
-        systemInstruction: '',
-        lastFetched: 0
-      };
-    }
-
-    const CACHE_TTL = 30 * 1000; // 30 seconds cache for rapid reflection of admin edits
-    const now = Date.now();
-
-    // Fetch from Firestore if cache is expired or empty
-    if (now - global.promptCache.lastFetched > CACHE_TTL || !global.promptCache.systemInstruction) {
-      global.promptCache.systemInstruction = await fetchChatbotSettings();
-      global.promptCache.lastFetched = now;
-    }
-
-    const systemInstruction = global.promptCache.systemInstruction;
-
-    // Prepare contents
-    const contents: any[] = [];
-    
-    // Add history
-    if (Array.isArray(history)) {
-      history.forEach((msg: any) => {
-        contents.push({
-          role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: msg.content }]
-        });
-      });
-    }
-    
-    // Add current message
-    contents.push({
-      role: 'user',
-      parts: [{ text: message }]
-    });
-
-    const fallbackModels = [
-      'gemini-3.5-flash-lite',
-      'gemini-3.1-flash-lite',
-      'gemini-3.7-flash',
-      'gemini-3.6-flash',
-      'gemini-3.5-flash',
-      'gemini-3-flash',
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite'
-    ];
-
-    let response;
-    let lastError;
-
-    for (const model of fallbackModels) {
-      try {
-        response = await ai.models.generateContent({
-          model: model,
-          contents: contents,
-          config: {
-            systemInstruction: systemInstruction,
-            temperature: 0.7,
-          }
-        });
-        break; // Success! Exit the loop.
-      } catch (err: any) {
-        console.warn(`Chatbot model ${model} failed:`, err?.message || err);
-        lastError = err;
-        // Continue to the next model in the fallback list
-      }
-    }
-
-    if (!response) {
-      throw lastError || new Error('All available AI models failed to respond due to quota or server errors.');
-    }
-
+    const text = await processChatMessage(message, history);
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text: response.text
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
     };
   } catch (error: any) {
     console.error('Chat error:', error);

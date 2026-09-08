@@ -36,7 +36,8 @@ export default function Footer() {
               <Link to="/gallery" className="text-cream-300 hover:text-gold-400 transition-colors">Gallery</Link>
               <Link to="/amenities" className="text-cream-300 hover:text-gold-400 transition-colors">Amenities</Link>
               <Link to="/location" className="text-cream-300 hover:text-gold-400 transition-colors">Location</Link>
-              <Link to="/book" className="text-gold-400 hover:text-gold-300 font-bold transition-colors">Book Venue →</Link>
+              <Link to="/contact" className="text-cream-300 hover:text-gold-400 transition-colors">Contact Us</Link>
+              <Link to="/book" className="col-span-2 text-gold-400 hover:text-gold-300 font-bold transition-colors pt-1">Book Venue →</Link>
             </div>
           </div>
 

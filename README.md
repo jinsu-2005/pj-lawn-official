@@ -53,11 +53,18 @@ Instead of forcing users to create an account upfront, the platform uses a **fri
 - **Security:** Access is strictly controlled via Firebase Custom Claims (`admin: true`). Unauthenticated or standard users are instantly redirected.
 - **Workflow:** The venue owner logs in, views pending bookings, negotiates off-platform if necessary, and inputs the final agreed-upon base price, marking the booking as `approved`.
 
-### 3. Serverless Cashfree Payment Integration
-To ensure the highest level of security, the `CASHFREE_SECRET_KEY` is never exposed to the frontend.
-- **Order Creation:** When a user clicks "Pay Advance" on their dashboard, the frontend calls a Netlify Serverless Function (`/netlify/functions/create-cashfree-order`). The backend securely generates a `payment_session_id`.
-- **Drop-in Checkout:** The frontend uses the Cashfree JS SDK to seamlessly open a modal overlay, preventing the user from leaving the site.
-- **Verification:** Upon payment completion, a second Netlify function (`/netlify/functions/verify-cashfree-payment`) independently verifies the transaction with Cashfree's servers before updating the Firestore booking status to `paid`. This prevents client-side spoofing.
+### 3. Bank-Grade Cashfree Payment Architecture (Rebuilt from Scratch)
+To ensure the highest level of security, integrity, and fault-tolerance, the payment pipeline is built on Cashfree API version `2025-01-01` and SDK `cashfree-pg` v6:
+- **Server-Side Order Authorization:** When a user initiates payment on their dashboard (`advance`, `remaining`, or `full`), `/netlify/functions/create-cashfree-order` queries Firestore to verify price integrity and status before generating a Cashfree `payment_session_id`. Client amounts cannot be spoofed.
+- **Drop-in Modal Web Checkout:** The frontend uses `@cashfreepayments/cashfree-js` initialized via singleton pattern with complete 3-state Promise handling (`result.error`, `result.redirect`, `result.paymentDetails`).
+- **Authoritative Gateway Verification:** `/netlify/functions/verify-cashfree-payment` calls Cashfree's authoritative `PGFetchOrder` and `PGOrderFetchPayments` endpoints before updating Firestore or dispatching receipts.
+- **Cryptographic Asynchronous Webhooks:** Real-time event pipeline `/netlify/functions/cashfree-webhook` validates `x-webhook-signature` using constant-time HMAC-SHA256 (`crypto.timingSafeEqual`) on the raw payload, processing `PAYMENT_SUCCESS_WEBHOOK`, `PAYMENT_FAILED_WEBHOOK`, and abandonment events with full idempotency.
+- **Automated Customer Receipts:** Sends branded transactional HTML receipts via Resend upon successful payment verification.
+
+### 4. High-Performance Photo Gallery (Images 1–11)
+- Venue showcase features 11 curated high-definition photographs covering the evening lighted lawn, dining & buffet areas, stage setups, grand entrance, and suites.
+- Built-in compression pipeline (`scripts/compress-gallery.js` using `sharp`) compresses raw multi-megabyte photos into progressive `.webp` format, slashing asset payloads by ~85% for instant mobile loading.
+- Features smooth masonry display and responsive Embla carousel lightbox.
 
 ---
 

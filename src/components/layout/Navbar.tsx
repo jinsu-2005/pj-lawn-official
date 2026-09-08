@@ -95,6 +95,7 @@ export default function Navbar() {
       <header
         className={cn(
           'fixed top-0 left-0 right-0 z-[9999] transition-all duration-300',
+          location.pathname === '/admin' && 'hidden md:block',
           isScrolled || isMobileMenuOpen
             ? 'bg-charcoal-950/98 backdrop-blur-md border-b border-white/5 py-3 md:py-2.5'
             : 'bg-transparent md:bg-charcoal-950/90 md:backdrop-blur-md md:border-b md:border-white/5 py-5 md:py-3'

@@ -1,4 +1,4 @@
-import { Handler } from '@netlify/functions'
+import type { Handler } from '@netlify/functions'
 import { Resend } from 'resend'
 
 // Helper for generating responsive, luxury PJ Lawn HTML email template

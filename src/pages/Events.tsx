@@ -12,7 +12,7 @@ const eventCategories = [
     title: 'Outdoor Dining & Gatherings',
     icon: Utensils,
     desc: 'An open-air location perfect for outdoor dining, dinner functions, and buffet gatherings. Bring people together in a relaxed outdoor setting.',
-    features: ['Outdoor dining', 'Family gatherings', 'Dinner functions', 'Lunch & Buffet events', 'Social get-togethers']
+    features: ['Outdoor dining', 'Family gatherings', 'Dinner functions', 'Buffet gatherings', 'Social get-togethers']
   },
   {
     title: 'Birthdays & Celebrations',

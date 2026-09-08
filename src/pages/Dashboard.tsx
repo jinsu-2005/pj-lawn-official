@@ -1,12 +1,12 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, LogOut, Copy, Check, CheckCircle2, Clock, XCircle, CalendarDays, IndianRupee, Users } from 'lucide-react'
+import { Calendar, LogOut, Copy, Check, CheckCircle2, Clock, XCircle, IndianRupee, Users, MessageCircle, MapPin, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { auth, db, googleProvider } from '@/lib/firebase'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { onAuthStateChanged, signOut, signInWithPopup } from 'firebase/auth'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { format } from 'date-fns'
+import { format, differenceInCalendarDays } from 'date-fns'
 const DownloadReceiptButton = lazy(() => import('@/components/ReceiptPDF').then(m => ({ default: m.DownloadReceiptButton })))
 import { load } from '@cashfreepayments/cashfree-js'
 
@@ -83,20 +83,30 @@ export default function Dashboard() {
           } else {
             setNotification({ type: 'info', message: `Payment status: ${data.status}` })
           }
-          // Clear query params
           searchParams.delete('order_id')
           setSearchParams(searchParams)
         })
         .catch(err => {
           console.error('Error verifying payment:', err)
           setNotification({ type: 'error', message: 'Failed to verify payment status.' })
-          // Clear query params
           searchParams.delete('order_id')
           setSearchParams(searchParams)
         })
       }
     }
   }, [searchParams, setSearchParams])
+
+// Cashfree JS SDK Singleton Loader (ensures initialization once per session)
+let cashfreePromise: Promise<any> | null = null
+let currentMode: string | null = null
+
+function getCashfreeInstance(mode: 'sandbox' | 'production' = 'sandbox') {
+  if (!cashfreePromise || currentMode !== mode) {
+    currentMode = mode
+    cashfreePromise = load({ mode })
+  }
+  return cashfreePromise
+}
 
   const handlePayment = async (booking: any, paymentType: 'advance' | 'full' | 'remaining') => {
     const amountToPay = paymentType === 'advance' 
@@ -114,49 +124,102 @@ export default function Dashboard() {
         body: JSON.stringify({
           bookingId: booking.id,
           amount: amountToPay,
-          customerName: booking.userName || user?.displayName || 'Customer',
+          customerName: booking.userName || user?.displayName || 'Valued Guest',
           customerEmail: booking.userEmail || user?.email || '',
-          customerPhone: booking.userPhone || '9999999999',
+          customerPhone: booking.userPhone || '9876543210',
           paymentType,
         })
       })
 
       if (!res.ok) {
-        const errorData = await res.json()
+        let errorData
+        try {
+          errorData = await res.json()
+        } catch {
+          throw new Error('Failed to initiate payment session. Please try again.')
+        }
         throw new Error(errorData.error || 'Failed to create payment order')
       }
 
       const data = await res.json()
-      const cashfree = await load({ mode: data.environment || 'sandbox' })
-      cashfree.checkout({ paymentSessionId: data.payment_session_id, redirectTarget: '_self' })
+      const mode = (data.environment === 'production') ? 'production' : 'sandbox'
+      const cashfree = await getCashfreeInstance(mode)
+      if (!cashfree) throw new Error('Could not load Cashfree Payments SDK. Please check your network connection.')
+      
+      const result = await cashfree.checkout({ 
+        paymentSessionId: data.payment_session_id, 
+        redirectTarget: '_modal' 
+      })
+      
+      // 3-state Promise resolution per Cashfree Web SDK specifications
+      if (result.error) {
+        // Modal was dismissed or closed without completing payment
+        setNotification({ 
+          type: 'info', 
+          message: 'Payment was not completed. You can retry at any time.' 
+        })
+        return
+      }
+      
+      if (result.redirect) {
+        // Navigating via redirect (for external or in-app browsers)
+        return
+      }
+
+      if (result.paymentDetails) {
+        setNotification({ type: 'info', message: 'Authorizing payment with bank...' })
+        const verifyRes = await fetch('/.netlify/functions/verify-cashfree-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: data.order_id, bookingId: booking.id })
+        })
+        
+        if (!verifyRes.ok) {
+          throw new Error('Verification pending. Please refresh your dashboard in a moment.')
+        }
+        
+        const verifyData = await verifyRes.json()
+        if (verifyData.status === 'PAID') {
+          setNotification({ 
+            type: 'success', 
+            message: 'Payment verified successfully! Your booking and event date are confirmed.' 
+          })
+        } else {
+          setNotification({ 
+            type: 'info', 
+            message: `Payment status: ${verifyData.status || 'Processing'}. Please wait a moment.` 
+          })
+        }
+      }
     } catch (err: any) {
       console.error('Payment error:', err)
-      setNotification({ type: 'error', message: err.message || 'Payment failed. Please try again.' })
+      setNotification({ type: 'error', message: err.message || 'Payment could not be completed. Please try again.' })
     } finally {
       setPayingBookingId(null)
     }
   }
 
-  const photoURL = user?.photoURL || null
-  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Guest'
-  const avatarLetter = (displayName)[0].toUpperCase()
+  const handleWhatsAppConcierge = (booking: any) => {
+    const phone = "919489724975"
+    const formattedDate = booking.eventDate ? format(new Date(`${booking.eventDate}T00:00:00`), 'dd MMM yyyy') : 'TBD'
+    const message = `Hello PJ Lawn Management! I am reaching out regarding my booking.\n\n` +
+      `• Booking ID: ${booking.id}\n` +
+      `• Name: ${booking.userName || user?.displayName || 'Customer'}\n` +
+      `• Event: ${booking.eventType} on ${formattedDate}\n` +
+      `• Status: ${booking.bookingStatus}\n\n` +
+      `Could you please assist me with my event preparations?`
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank')
+  }
 
-  const confirmedCount = bookings.filter(b => b.bookingStatus === 'confirmed').length
-  const pendingCount = bookings.filter(b => b.bookingStatus === 'pending_review').length
-  const upcomingCount = bookings.filter(b => ['confirmed', 'awaiting_payment'].includes(b.bookingStatus)).length
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Guest'
 
   if (loading) {
     return (
       <div className="pt-32 pb-24 min-h-screen bg-charcoal-900">
-        <section className="container mx-auto px-4">
+        <section className="container mx-auto px-4 max-w-4xl">
           <div className="animate-pulse space-y-4">
-            <div className="h-32 rounded-2xl" style={{ background: '#161616' }} />
-            <div className="grid grid-cols-3 gap-3">
-              <div className="h-20 rounded-xl" style={{ background: '#161616' }} />
-              <div className="h-20 rounded-xl" style={{ background: '#161616' }} />
-              <div className="h-20 rounded-xl" style={{ background: '#161616' }} />
-            </div>
-            <div className="h-48 rounded-2xl" style={{ background: '#161616' }} />
+            <div className="h-20 rounded-2xl" style={{ background: '#161616' }} />
+            <div className="h-64 rounded-2xl" style={{ background: '#161616' }} />
           </div>
         </section>
       </div>
@@ -177,22 +240,22 @@ export default function Dashboard() {
             <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
               <Calendar className="text-gold-400 w-7 h-7" />
             </div>
-            <h1 className="text-2xl font-serif text-cream-100 mb-2">My Bookings</h1>
+            <h1 className="text-2xl font-serif text-cream-100 mb-2">My Reservations</h1>
             <p className="text-cream-400 text-sm mb-6 leading-relaxed">
-              Sign in with Google to view your bookings, check dates, and download receipts.
+              Sign in with your Google account to access your event itinerary, payment status, and official receipts.
             </p>
             <div className="space-y-3">
               <button
                 onClick={() => signInWithPopup(auth, googleProvider)}
                 className="w-full flex items-center justify-center gap-2 py-3.5 bg-gold-400 hover:bg-gold-300 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all active:scale-95 shadow-lg shadow-gold-500/20"
               >
-                Continue with Google
+                Sign In with Google
               </button>
               <Link
                 to="/book"
                 className="inline-block py-2 text-xs uppercase tracking-wider text-cream-400 hover:text-gold-400 font-semibold transition-colors"
               >
-                Or Book a New Date →
+                Or Reserve a New Date →
               </Link>
             </div>
           </motion.div>
@@ -225,243 +288,218 @@ export default function Dashboard() {
       )}
 
       <section className="container mx-auto px-4 max-w-4xl">
-
-        {/* Profile Hero Card */}
+        
+        {/* Streamlined Luxury Header */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-2xl p-5 sm:p-7 mb-5 flex items-center gap-4 sm:gap-6"
-          style={{
-            background: 'linear-gradient(135deg, #181818 0%, #141414 100%)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
-          }}
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-white/[0.08]"
         >
-          {/* Gold accent line */}
-          <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.7), transparent)' }} />
-
-          {/* Mobile sparkles — decorative only */}
-          <span className="sparkle sparkle-md sparkle-twinkle sm:hidden" style={{ top: '10px', right: '52px' }}>✦</span>
-          <span className="sparkle sparkle-sm sparkle-float sparkle-delay-1 sm:hidden" style={{ top: '22px', right: '38px' }}>◆</span>
-          <span className="sparkle sparkle-sm sparkle-slow sparkle-delay-2 sm:hidden" style={{ top: '8px', right: '70px' }}>✦</span>
-
-          {/* Avatar */}
-          <div className="flex-shrink-0 relative z-10">
-            {photoURL ? (
-              <img
-                src={photoURL}
-                alt={displayName}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover"
-                style={{ border: '2px solid rgba(201,168,76,0.5)', boxShadow: '0 0 20px rgba(201,168,76,0.15)' }}
-              />
-            ) : (
-              <div
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-gold-400 text-2xl sm:text-3xl font-bold"
-                style={{ background: 'rgba(201,168,76,0.1)', border: '2px solid rgba(201,168,76,0.4)', boxShadow: '0 0 20px rgba(201,168,76,0.12)' }}
-              >
-                {avatarLetter}
-              </div>
-            )}
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-gold-400 animate-pulse" />
+              <p className="text-[11px] font-semibold text-gold-400 uppercase tracking-widest">PJ Lawn &bull; Guest Portal</p>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-serif text-cream-50 font-bold">
+              Welcome, {displayName}
+            </h1>
+            <p className="text-xs text-cream-400 mt-0.5">{user?.email}</p>
           </div>
 
-          {/* Info */}
-          <div className="flex-1 min-w-0 relative z-10">
-            <p className="text-[10px] text-gold-400/80 uppercase tracking-widest mb-0.5">Welcome back</p>
-            <h1 className="text-xl sm:text-2xl font-serif text-cream-50 font-bold truncate">{displayName}</h1>
-            <p className="text-cream-400 text-xs sm:text-sm truncate mt-0.5">{user?.email}</p>
-          </div>
-
-          {/* Sign out */}
-          <button
-            onClick={handleSignOut}
-            className="relative z-10 flex-shrink-0 flex flex-col items-center gap-1 text-cream-400 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-500/8"
-          >
-            <LogOut size={18} />
-            <span className="text-[10px] uppercase tracking-wider hidden sm:block">Sign Out</span>
-          </button>
-        </motion.div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {[
-            { label: 'Total', value: bookings.length, icon: <CalendarDays size={16} />, color: 'text-cream-300', accent: 'rgba(217,205,181,0.12)' },
-            { label: 'Upcoming', value: upcomingCount, icon: <Clock size={16} />, color: 'text-blue-400', accent: 'rgba(96,165,250,0.12)' },
-            { label: 'Confirmed', value: confirmedCount, icon: <CheckCircle2 size={16} />, color: 'text-green-400', accent: 'rgba(74,222,128,0.12)' },
-          ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.07 }}
-              className="rounded-xl p-3 sm:p-4 text-center relative overflow-hidden"
-              style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.09)' }}
+          <div className="flex items-center gap-3">
+            <Button
+              to="/book"
+              size="sm"
+              className="font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-md"
+              style={{
+                background: 'linear-gradient(135deg, #e8c96d, #c9a84c)',
+                color: '#0a0a0a',
+                border: '1px solid rgba(232,201,109,0.4)',
+              } as React.CSSProperties}
             >
-              {/* Colored top accent */}
-              <div className="absolute inset-x-0 top-0 h-px" style={{ background: stat.accent.replace('0.12', '0.5') }} />
-              <div className={`${stat.color} flex justify-center mb-1.5`}>{stat.icon}</div>
-              <div className={`text-xl sm:text-2xl font-bold font-serif ${stat.color}`}>{stat.value}</div>
-              <div className="text-[10px] sm:text-xs text-cream-400/70 uppercase tracking-wider mt-0.5">{stat.label}</div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* New Booking CTA */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mb-6">
-          <Button
-            to="/book"
-            className="w-full sm:w-auto font-black text-sm uppercase tracking-widest py-3 px-8 rounded-xl transition-all"
-            style={{
-              background: 'linear-gradient(135deg, #e8c96d, #c9a84c)',
-              color: '#0a0a0a',
-              border: '1px solid rgba(232,201,109,0.4)',
-              boxShadow: '0 4px 20px rgba(201,168,76,0.25)'
-            } as React.CSSProperties}
-          >
-            + New Booking
-          </Button>
+              + Reserve Another Date
+            </Button>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-1.5 px-3 py-2 text-cream-400 hover:text-red-400 text-xs transition-colors rounded-lg hover:bg-white/5"
+              title="Sign Out"
+            >
+              <LogOut size={15} />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
+          </div>
         </motion.div>
 
-        {/* Bookings */}
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-serif text-cream-100">Your Bookings</h2>
-          {pendingCount > 0 && (
-            <span className="text-xs text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 rounded-full px-3 py-1">
-              {pendingCount} pending review
-            </span>
-          )}
-        </div>
-
+        {/* Bookings Section */}
         {bookings.length === 0 ? (
-          <div className="bg-charcoal-800 border border-white/5 rounded-2xl p-10 text-center">
-            <Calendar className="w-12 h-12 text-cream-400/20 mx-auto mb-4" />
-            <p className="text-cream-200 mb-1 font-serif">No bookings yet</p>
-            <p className="text-cream-400 text-sm mb-5">Start by making a reservation for your event.</p>
+          <div className="rounded-2xl p-12 text-center" style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <Calendar className="w-12 h-12 text-gold-400/40 mx-auto mb-4" />
+            <h3 className="text-lg font-serif text-cream-100 mb-2">No active reservations</h3>
+            <p className="text-cream-400 text-sm max-w-md mx-auto mb-6">
+              You haven't reserved a date with PJ Lawn yet. Plan your wedding, birthday, or private gathering with us.
+            </p>
             <Button to="/book">Make a Reservation</Button>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {bookings.map((booking, idx) => (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.06 }}
-                key={booking.id}
-                className="rounded-2xl overflow-hidden relative"
-                style={{ background: '#161616', border: '1px solid rgba(255,255,255,0.1)' }}
-              >
-                {/* Mobile sparkle on event date */}
-                <span className="sparkle sparkle-sm sparkle-twinkle sparkle-delay-2 sm:hidden" style={{ top: '14px', right: '90px' }}>✦</span>
+          <div className="space-y-6">
+            {bookings.map((booking, idx) => {
+              const countdown = getCountdownBanner(booking.eventDate, booking.bookingStatus)
+              const formattedDate = booking.eventDate ? format(new Date(`${booking.eventDate}T00:00:00`), 'EEEE, MMMM do, yyyy') : 'Date TBD'
 
-                {/* Card header */}
-                <div className="flex items-start justify-between p-4 sm:p-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                  <div>
-                    <div className="text-[10px] text-gold-400/80 uppercase tracking-widest mb-0.5 flex items-center gap-1">
-                      <Users size={11} /> {booking.eventType}
-                    </div>
-                    <h3 className="text-base sm:text-lg font-serif text-cream-50 leading-tight">
-                      {booking.eventDate ? format(new Date(booking.eventDate), 'EEE, MMM do yyyy') : 'Date TBD'}
-                    </h3>
-                    <p className="text-xs text-cream-400 mt-0.5">{booking.guestCount} guests</p>
-                  </div>
-                  <StatusBadge status={booking.bookingStatus} />
-                </div>
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  key={booking.id}
+                  className="rounded-2xl overflow-hidden relative"
+                  style={{
+                    background: 'linear-gradient(135deg, #181818 0%, #131313 100%)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  {/* Top Gold Accent Line */}
+                  <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: 'linear-gradient(90deg, transparent, rgba(201,168,76,0.8), transparent)' }} />
 
-                {/* Timeline */}
-                <div className="px-4 sm:px-5 pt-4">
-                  <BookingTimeline status={booking.bookingStatus} />
-                </div>
+                  {/* Card Header & Countdown */}
+                  <div className="p-5 sm:p-7 border-b border-white/[0.08]">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                      {countdown && (
+                        <div
+                          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold w-fit"
+                          style={{ background: countdown.bg, border: `1px solid ${countdown.border}`, color: countdown.color }}
+                        >
+                          <Sparkles size={13} className="text-gold-400" />
+                          <span>{countdown.text}</span>
+                        </div>
+                      )}
+                      <StatusBadge status={booking.bookingStatus} />
+                    </div>
 
-                {/* Status message */}
-                <div className="px-4 sm:px-5">
-                  <BookingStatusMessage booking={booking} />
-                </div>
+                    <h2 className="text-xl sm:text-2xl font-serif text-cream-50 font-bold leading-tight mb-3">
+                      {formattedDate}
+                    </h2>
 
-                {/* Payment + Actions */}
-                <div className="p-4 sm:p-5 mt-2">
-                  {/* Payment summary — deeper nested surface */}
-                  <div className="rounded-xl p-3 sm:p-4 mb-3" style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <div className="flex items-center gap-1.5 mb-2.5">
-                      <IndianRupee size={13} className="text-gold-400" />
-                      <span className="text-xs font-semibold text-cream-300 uppercase tracking-wider">Payment Summary</span>
-                    </div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-cream-400">Total</span>
-                      <span className="text-cream-100 font-medium">₹{(booking.totalAmount || booking.estimatedAmount || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-xs mb-2.5">
-                      <span className="text-cream-400">Paid</span>
-                      <span className="text-green-400 font-medium">₹{(booking.amountPaid || 0).toLocaleString()}</span>
-                    </div>
-                    {/* Progress bar */}
-                    <div className="w-full rounded-full h-1.5 overflow-hidden" style={{ background: '#2a2a2a' }}>
-                      <div
-                        className="progress-gold h-1.5 rounded-full transition-all duration-1000"
-                        style={{ width: `${Math.min(100, ((booking.amountPaid || 0) / (booking.totalAmount || booking.estimatedAmount || 1)) * 100)}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-[11px] text-cream-400/70">Due</span>
-                      <span className="text-sm font-bold text-gold-400">
-                        {booking.bookingStatus === 'awaiting_payment'
-                          ? `₹${(booking.advanceAmount || 5000).toLocaleString()}`
-                          : `₹${Math.max(0, (booking.totalAmount || booking.estimatedAmount || 0) - (booking.amountPaid || 0)).toLocaleString()}`}
+                    {/* Metadata Badges */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-cream-300">
+                      <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/10">
+                        <Users size={13} className="text-gold-400" />
+                        <span className="text-cream-100 font-medium">{booking.eventType}</span> &bull; {booking.guestCount} Guests
+                      </span>
+                      <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/5 border border-white/10">
+                        <MapPin size={13} className="text-gold-400" />
+                        PJ Lawn, Nagercoil
+                      </span>
+                      <span className="flex items-center gap-2 px-3 py-1 rounded-lg bg-white/5 border border-white/10 font-mono text-[11px] text-cream-400">
+                        ID: {booking.id.slice(0, 10)}...
+                        <CopyButton text={booking.id} />
                       </span>
                     </div>
                   </div>
 
-                  {/* Booking ID */}
-                  <div className="flex items-center gap-2 rounded-lg px-3 py-2 mb-3" style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <span className="text-[10px] text-cream-400/60 uppercase tracking-wider">ID</span>
-                    <span className="text-xs font-mono text-cream-400 flex-1 truncate">{booking.id}</span>
-                    <CopyButton text={booking.id} />
+                  {/* Timeline & Status Notice */}
+                  <div className="px-5 sm:px-7 pt-5">
+                    <BookingTimeline status={booking.bookingStatus} />
+                    <BookingStatusMessage booking={booking} />
                   </div>
 
-                  {/* Action buttons */}
-                  <div className="space-y-2">
-                    {booking.bookingStatus === 'awaiting_payment' && (
-                      <button
-                        className="w-full font-black text-sm py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{
-                          background: 'linear-gradient(135deg, #e8c96d, #c9a84c)',
-                          color: '#0a0a0a',
-                          boxShadow: '0 4px 20px rgba(201,168,76,0.25)'
-                        }}
-                        onClick={() => handlePayment(booking, 'advance')}
-                        disabled={payingBookingId === booking.id}
-                      >
-                        {payingBookingId === booking.id ? 'Processing...' : '⚡ Pay Advance Now'}
-                      </button>
-                    )}
-                    {booking.bookingStatus === 'confirmed' && booking.paymentStatus === 'advance_paid' && ((booking.totalAmount || 0) - (booking.amountPaid || 0) > 0) && (
-                      <button
-                        className="w-full font-black text-sm py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{
-                          background: 'linear-gradient(135deg, #e8c96d, #c9a84c)',
-                          color: '#0a0a0a',
-                          boxShadow: '0 4px 20px rgba(201,168,76,0.25)'
-                        }}
-                        onClick={() => handlePayment(booking, 'remaining')}
-                        disabled={payingBookingId === booking.id}
-                      >
-                        {payingBookingId === booking.id ? 'Processing...' : '💳 Pay Remaining Balance'}
-                      </button>
-                    )}
-                    {['confirmed', 'completed'].includes(booking.bookingStatus) && (
-                      <Suspense fallback={<div className="text-center text-xs text-cream-400 py-2">Loading...</div>}>
-                        <DownloadReceiptButton
-                          booking={booking}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-cream-200 hover:text-cream-50 transition-all bg-charcoal-750 border border-white/[0.14] hover:bg-charcoal-700"
-                        />
-                      </Suspense>
-                    )}
-                  </div>
+                  {/* Transparent Financial Summary & Actions */}
+                  <div className="p-5 sm:p-7">
+                    <div className="rounded-xl p-4 sm:p-5 mb-5" style={{ background: '#0e0e0e', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.08]">
+                        <div className="flex items-center gap-1.5">
+                          <IndianRupee size={15} className="text-gold-400" />
+                          <span className="text-xs font-bold text-cream-200 uppercase tracking-wider">Payment Breakdown</span>
+                        </div>
+                        <span className="text-[11px] text-cream-400">
+                          {booking.paymentStatus === 'fully_paid' ? 'Paid in Full' : booking.paymentStatus === 'advance_paid' ? 'Advance Paid' : 'Pending Payment'}
+                        </span>
+                      </div>
 
-                  <div className="text-[10px] text-cream-400/35 mt-3 leading-relaxed">
-                    * Cancellations made 7+ days before event receive full advance refund. Within 7 days is non-refundable.
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                          <span className="text-xs text-cream-400 block mb-1">Total Venue Fee</span>
+                          <span className="text-lg font-serif font-bold text-cream-100">
+                            ₹{(booking.totalAmount || booking.estimatedAmount || 0).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                          <span className="text-xs text-cream-400 block mb-1">Advance Paid</span>
+                          <span className="text-lg font-serif font-bold text-green-400">
+                            ₹{(booking.amountPaid || 0).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                          <span className="text-xs text-cream-400 block mb-1">Balance Due</span>
+                          <span className="text-lg font-serif font-bold text-gold-400">
+                            {booking.bookingStatus === 'awaiting_payment'
+                              ? `₹${(booking.advanceAmount || 5000).toLocaleString()} (Advance)`
+                              : `₹${Math.max(0, (booking.totalAmount || booking.estimatedAmount || 0) - (booking.amountPaid || 0)).toLocaleString()}`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                      {booking.bookingStatus === 'awaiting_payment' && (
+                        <button
+                          className="flex-1 font-black text-sm py-3.5 px-6 rounded-xl transition-all active:scale-95 disabled:opacity-50 shadow-lg"
+                          style={{
+                            background: 'linear-gradient(135deg, #e8c96d, #c9a84c)',
+                            color: '#0a0a0a',
+                            boxShadow: '0 4px 20px rgba(201,168,76,0.25)'
+                          }}
+                          onClick={() => handlePayment(booking, 'advance')}
+                          disabled={payingBookingId === booking.id}
+                        >
+                          {payingBookingId === booking.id ? 'Processing...' : '⚡ Pay Advance Now (₹' + (booking.advanceAmount || 5000).toLocaleString() + ')'}
+                        </button>
+                      )}
+
+                      {booking.bookingStatus === 'confirmed' && booking.paymentStatus === 'advance_paid' && ((booking.totalAmount || 0) - (booking.amountPaid || 0) > 0) && (
+                        <button
+                          className="flex-1 font-black text-sm py-3.5 px-6 rounded-xl transition-all active:scale-95 disabled:opacity-50 shadow-lg"
+                          style={{
+                            background: 'linear-gradient(135deg, #e8c96d, #c9a84c)',
+                            color: '#0a0a0a',
+                            boxShadow: '0 4px 20px rgba(201,168,76,0.25)'
+                          }}
+                          onClick={() => handlePayment(booking, 'remaining')}
+                          disabled={payingBookingId === booking.id}
+                        >
+                          {payingBookingId === booking.id ? 'Processing...' : '💳 Clear Remaining Balance Online'}
+                        </button>
+                      )}
+
+                      {/* 1-Tap WhatsApp Concierge Trigger */}
+                      <button
+                        onClick={() => handleWhatsAppConcierge(booking)}
+                        className="flex items-center justify-center gap-2 py-3.5 px-5 rounded-xl text-sm font-semibold text-green-400 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 transition-all"
+                      >
+                        <MessageCircle size={17} />
+                        <span>Message Venue Concierge</span>
+                      </button>
+
+                      {/* Receipt Download */}
+                      {['confirmed', 'completed'].includes(booking.bookingStatus) && (
+                        <Suspense fallback={<div className="text-xs text-cream-400 py-2">Loading receipt...</div>}>
+                          <DownloadReceiptButton
+                            booking={booking}
+                            className="flex items-center justify-center gap-2 py-3.5 px-5 rounded-xl text-sm font-medium text-cream-200 hover:text-cream-50 bg-charcoal-750 border border-white/[0.14] hover:bg-charcoal-700 transition-all"
+                          />
+                        </Suspense>
+                      )}
+                    </div>
+
+                    <p className="text-[11px] text-cream-400/50 mt-4 text-center sm:text-left leading-relaxed">
+                      * Remaining balance can be settled online or in person on the event day. Need to adjust timings or guest count? Message our concierge anytime.
+                    </p>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              )
+            })}
           </div>
         )}
       </section>
@@ -469,19 +507,61 @@ export default function Dashboard() {
   )
 }
 
+function getCountdownBanner(eventDateStr: string, status: string) {
+  if (status === 'rejected' || status === 'cancelled') return null
+  if (!eventDateStr) return null
+  
+  const eventDate = new Date(`${eventDateStr}T00:00:00`)
+  const today = new Date()
+  today.setHours(0,0,0,0)
+  
+  const daysDiff = differenceInCalendarDays(eventDate, today)
+  
+  if (daysDiff < 0) {
+    return {
+      text: 'Celebration Completed',
+      bg: 'rgba(255, 255, 255, 0.05)',
+      border: 'rgba(255, 255, 255, 0.1)',
+      color: '#9ca3af'
+    }
+  }
+  if (daysDiff === 0) {
+    return {
+      text: '🎉 Today is the Big Day!',
+      bg: 'rgba(201, 168, 76, 0.15)',
+      border: 'rgba(201, 168, 76, 0.4)',
+      color: '#e8c96d'
+    }
+  }
+  if (daysDiff === 1) {
+    return {
+      text: '🌟 Celebration is Tomorrow!',
+      bg: 'rgba(201, 168, 76, 0.15)',
+      border: 'rgba(201, 168, 76, 0.4)',
+      color: '#e8c96d'
+    }
+  }
+  return {
+    text: `${daysDiff} Days Until Your Celebration`,
+    bg: 'rgba(201, 168, 76, 0.1)',
+    border: 'rgba(201, 168, 76, 0.25)',
+    color: '#e8c96d'
+  }
+}
+
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; bg: string; color: string; border: string }> = {
     'pending_review': { label: 'Under Review', bg: 'rgba(234,179,8,0.1)',   color: '#fbbf24', border: 'rgba(234,179,8,0.3)'   },
-    'awaiting_payment':{ label: 'Pay Now',     bg: 'rgba(201,168,76,0.12)', color: '#e8c96d', border: 'rgba(201,168,76,0.38)' },
-    'confirmed':       { label: 'Confirmed',   bg: 'rgba(34,197,94,0.09)',  color: '#4ade80', border: 'rgba(34,197,94,0.3)'   },
+    'awaiting_payment':{ label: 'Pay Advance', bg: 'rgba(201,168,76,0.15)', color: '#e8c96d', border: 'rgba(201,168,76,0.45)' },
+    'confirmed':       { label: 'Confirmed ✓', bg: 'rgba(34,197,94,0.1)',  color: '#4ade80', border: 'rgba(34,197,94,0.3)'   },
     'completed':       { label: 'Completed',   bg: 'rgba(255,255,255,0.05)',color: '#9ca3af', border: 'rgba(255,255,255,0.12)'},
     'cancelled':       { label: 'Cancelled',   bg: 'rgba(239,68,68,0.09)',  color: '#f87171', border: 'rgba(239,68,68,0.3)'   },
-    'rejected':        { label: 'Rejected',    bg: 'rgba(239,68,68,0.09)',  color: '#f87171', border: 'rgba(239,68,68,0.3)'   },
+    'rejected':        { label: 'Declined',    bg: 'rgba(239,68,68,0.09)',  color: '#f87171', border: 'rgba(239,68,68,0.3)'   },
   }
   const c = config[status] || { label: status, bg: 'rgba(255,255,255,0.05)', color: '#9ca3af', border: 'rgba(255,255,255,0.12)' }
   return (
     <span
-      className="flex-shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+      className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
       style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}
     >
       {c.label}
@@ -498,32 +578,32 @@ function CopyButton({ text }: { text: string }) {
   }
   return (
     <button onClick={handleCopy} className="text-cream-400 hover:text-gold-400 transition-colors" title="Copy ID">
-      {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
     </button>
   )
 }
 
 function BookingTimeline({ status }: { status: string }) {
   const steps = [
-    { id: 'pending_review', label: 'Pending' },
-    { id: 'awaiting_payment', label: 'Approved' },
-    { id: 'confirmed', label: 'Confirmed' },
+    { id: 'pending_review', label: '1. Request Received' },
+    { id: 'awaiting_payment', label: '2. Approved by Venue' },
+    { id: 'confirmed', label: '3. Booking Locked' },
   ]
   let currentStepIndex = 0
   if (status === 'awaiting_payment') currentStepIndex = 1
   if (status === 'confirmed' || status === 'completed') currentStepIndex = 2
 
-  if (status === 'rejected') {
+  if (status === 'rejected' || status === 'cancelled') {
     return (
       <div className="flex items-center text-red-400 gap-2 mb-4">
         <XCircle className="w-4 h-4" />
-        <span className="text-sm font-medium">Booking Rejected</span>
+        <span className="text-sm font-medium">Reservation Closed</span>
       </div>
     )
   }
 
   return (
-    <div className="flex items-center w-full mb-5">
+    <div className="flex items-center w-full mb-4">
       {steps.map((step, index) => {
         const isCompleted = index <= currentStepIndex
         const isCurrent = index === currentStepIndex
@@ -542,7 +622,7 @@ function BookingTimeline({ status }: { status: string }) {
                 {isCompleted ? <Check className="w-2.5 h-2.5" /> : <div className="w-1 h-1 rounded-full bg-current" />}
               </div>
               <span
-                className="mt-1.5 text-[9px] uppercase tracking-wider whitespace-nowrap font-medium"
+                className="mt-1.5 text-[9px] sm:text-[10px] uppercase tracking-wider whitespace-nowrap font-semibold"
                 style={{ color: isCurrent ? '#e8c96d' : isCompleted ? '#ede5d0' : 'rgba(217,205,181,0.35)' }}
               >
                 {step.label}
@@ -550,7 +630,7 @@ function BookingTimeline({ status }: { status: string }) {
             </div>
             {index < steps.length - 1 && (
               <div
-                className="flex-1 h-px mx-1.5 mb-4"
+                className="flex-1 h-px mx-2 mb-4"
                 style={{
                   background: index < currentStepIndex
                     ? 'linear-gradient(90deg, #c9a84c, #e8c96d)'
@@ -568,42 +648,42 @@ function BookingTimeline({ status }: { status: string }) {
 function BookingStatusMessage({ booking }: { booking: any }) {
   if (booking.bookingStatus === 'rejected') {
     return (
-      <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl mb-1">
-        <p className="text-red-400 text-sm font-medium mb-0.5">Booking Declined</p>
-        <p className="text-cream-400 text-xs">{booking.rejectionReason || 'Unfortunately, this date is unavailable. Please try another date.'}</p>
-        <Button to="/book" variant="outline" size="sm" className="mt-2">Try Another Date</Button>
+      <div className="bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl mb-3">
+        <p className="text-red-400 text-sm font-semibold mb-0.5">Date Unavailable</p>
+        <p className="text-cream-400 text-xs leading-relaxed">{booking.rejectionReason || 'Unfortunately, this date is unavailable. Please choose another date or connect with our concierge.'}</p>
+        <Button to="/book" variant="outline" size="sm" className="mt-2.5">Choose Another Date</Button>
       </div>
     )
   }
   if (booking.bookingStatus === 'pending_review') {
     return (
-      <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl flex gap-2.5 items-start mb-1">
+      <div className="bg-blue-500/10 border border-blue-500/20 p-3.5 rounded-xl flex gap-3 items-start mb-3">
         <Clock className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
         <div>
-          <p className="text-blue-400 text-sm font-medium">Under Review</p>
-          <p className="text-cream-400 text-xs">Our team is reviewing your request. You'll receive an email soon.</p>
+          <p className="text-blue-400 text-sm font-semibold">Under Venue Review</p>
+          <p className="text-cream-300 text-xs leading-relaxed">Our manager is reviewing your date and guest requirements. You will receive an update shortly.</p>
         </div>
       </div>
     )
   }
   if (booking.bookingStatus === 'awaiting_payment') {
     return (
-      <div className="bg-gold-400/10 border border-gold-400/20 p-3 rounded-xl flex gap-2.5 items-start mb-1">
+      <div className="bg-gold-400/10 border border-gold-400/25 p-3.5 rounded-xl flex gap-3 items-start mb-3">
         <CheckCircle2 className="w-4 h-4 text-gold-400 shrink-0 mt-0.5" />
         <div>
-          <p className="text-gold-400 text-sm font-medium">Booking Approved!</p>
-          <p className="text-cream-400 text-xs">Pay the advance within 24 hours to secure your date.</p>
+          <p className="text-gold-400 text-sm font-semibold">Date Approved &bull; Advance Pending</p>
+          <p className="text-cream-300 text-xs leading-relaxed">Your date is held! Please pay the ₹{(booking.advanceAmount || 5000).toLocaleString()} advance below to lock in the reservation.</p>
         </div>
       </div>
     )
   }
   if (booking.bookingStatus === 'confirmed') {
     return (
-      <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-xl flex gap-2.5 items-start mb-1">
+      <div className="bg-green-500/10 border border-green-500/20 p-3.5 rounded-xl flex gap-3 items-start mb-3">
         <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
         <div>
-          <p className="text-green-400 text-sm font-medium">Booking Confirmed ✓</p>
-          <p className="text-cream-400 text-xs">Your event is locked in. See you there!</p>
+          <p className="text-green-400 text-sm font-semibold">Reservation Confirmed ✓</p>
+          <p className="text-cream-300 text-xs leading-relaxed">Your venue slot is secured. Feel free to contact our venue concierge below for site visits or coordination.</p>
         </div>
       </div>
     )

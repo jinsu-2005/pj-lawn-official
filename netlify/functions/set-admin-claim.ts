@@ -1,4 +1,4 @@
-import { Handler } from '@netlify/functions';
+import type { Handler } from '@netlify/functions';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
