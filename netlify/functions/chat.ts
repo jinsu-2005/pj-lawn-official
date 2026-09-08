@@ -1,6 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getAdminDb } from './adminDb.ts';
 import { GoogleGenAI } from '@google/genai';
 
 declare global {
@@ -10,43 +9,25 @@ declare global {
   } | undefined;
 }
 
-// Initialize Firebase Admin if not already initialized
-if (getApps().length === 0) {
-  try {
-        let serviceAccount: any = null;
-    const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
-    if (FIREBASE_PRIVATE_KEY) {
-      serviceAccount = {
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: Buffer.from(FIREBASE_PRIVATE_KEY, 'base64').toString('utf8'),
-      };
-    } else {
-      const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-      if (raw) {
-        try {
-          serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-        } catch {
-          serviceAccount = JSON.parse(raw);
-        }
-      }
-    }
-    
-    if (serviceAccount) {
-      initializeApp({
-        credential: cert(serviceAccount)
-      });
-    }
-  } catch (error) {
-    console.error('Firebase Admin initialization error:', error);
-  }
-}
-
-// Helper to fetch chatbot settings from Firestore REST API (works reliably in serverless environments)
+// Helper to fetch chatbot settings from Firestore
 async function fetchChatbotSettings(): Promise<string> {
   const DEFAULT_PROMPT = `You are the official PJ Lawn virtual assistant. Keep your responses warm, concise, and helpful. Use clean, natural formatting without excessive asterisks.`;
   
-  // 1. Try Firestore REST API
+  // 1. Try Firestore Admin SDK via inlined credentials
+  try {
+    const db = getAdminDb();
+    const settingsDoc = await db.collection('settings').doc('chatbot').get();
+    if (settingsDoc.exists) {
+      const data = settingsDoc.data();
+      if (data?.systemPrompt || data?.businessData) {
+        return `${data?.systemPrompt || ''}\n\nHere is the business context and facts you must reference:\n${data?.businessData || ''}`;
+      }
+    }
+  } catch (err) {
+    console.warn('Admin SDK fetch error:', err);
+  }
+
+  // 2. Fallback to Firestore REST API
   try {
     const projectId = process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'pj-lawn';
     const res = await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/settings/chatbot`);
@@ -60,20 +41,6 @@ async function fetchChatbotSettings(): Promise<string> {
     }
   } catch (err) {
     console.warn('Firestore REST fetch error:', err);
-  }
-
-  // 2. Fallback to Admin SDK if available
-  try {
-    if (getApps().length > 0) {
-      const db = getFirestore();
-      const settingsDoc = await db.collection('settings').doc('chatbot').get();
-      if (settingsDoc.exists) {
-        const data = settingsDoc.data();
-        return `${data?.systemPrompt || ''}\n\nHere is the business context and facts you must reference:\n${data?.businessData || ''}`;
-      }
-    }
-  } catch (err) {
-    console.warn('Firestore Admin SDK fetch error:', err);
   }
 
   return DEFAULT_PROMPT;

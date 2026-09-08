@@ -1,44 +1,6 @@
 import type { Handler } from '@netlify/functions';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getAdminDb, FieldValue } from './adminDb.ts';
 import { Cashfree, CFEnvironment } from 'cashfree-pg';
-
-let initialized = false;
-
-function initFirebase() {
-  if (!initialized && getApps().length === 0) {
-    try {
-      let serviceAccount: any = null;
-      const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
-      
-      if (FIREBASE_PRIVATE_KEY) {
-        serviceAccount = {
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: Buffer.from(FIREBASE_PRIVATE_KEY, 'base64').toString('utf8'),
-        };
-      } else {
-        const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-        if (raw) {
-          try {
-            serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-          } catch {
-            serviceAccount = JSON.parse(raw);
-          }
-        }
-      }
-      
-      if (serviceAccount) {
-        initializeApp({
-          credential: cert(serviceAccount)
-        });
-        initialized = true;
-      }
-    } catch (e) {
-      console.error("[Firebase Admin] Initialization failed:", e);
-    }
-  }
-}
 
 export const handler: Handler = async (event) => {
   const headers = {
@@ -61,8 +23,6 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    initFirebase();
-    
     const body = JSON.parse(event.body || '{}');
     const { orderId, bookingId } = body;
     
@@ -109,15 +69,7 @@ export const handler: Handler = async (event) => {
     console.log(`[Cashfree Backend] PGFetchOrder(${orderId}) -> status: ${orderStatus}`);
 
     if (orderStatus === 'PAID') {
-      // Payment is verified as completed at the gateway
-      if (getApps().length === 0) {
-        console.error("[Cashfree Backend] Firebase Admin not configured. Cannot update Firestore.");
-        return { 
-          statusCode: 500, 
-          headers, 
-          body: JSON.stringify({ error: 'Database service unavailable to fulfill order.' }) 
-        };
-      }
+      const db = getAdminDb();
 
       // Fetch specific transaction details (using cashfree-pg v6 signature: order_id only)
       let successfulPayment: any = null;
@@ -131,7 +83,6 @@ export const handler: Handler = async (event) => {
         console.warn("[Cashfree Backend] Failed to fetch payments array for order:", fetchErr);
       }
 
-      const db = getFirestore();
       const bookingRef = db.collection('bookings').doc(resolvedBookingId);
       const bookingSnap = await bookingRef.get();
 

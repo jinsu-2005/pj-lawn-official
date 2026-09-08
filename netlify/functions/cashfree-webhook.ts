@@ -1,44 +1,7 @@
 import type { Handler } from "@netlify/functions";
 import { Cashfree, CFEnvironment } from "cashfree-pg";
-import { initializeApp, cert, getApps } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getAdminDb, FieldValue } from "./adminDb.ts";
 import crypto from "crypto";
-
-let initialized = false;
-
-function initFirebase() {
-  if (!initialized && getApps().length === 0) {
-    try {
-      let serviceAccount: any = null;
-      const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
-      if (FIREBASE_PRIVATE_KEY) {
-        serviceAccount = {
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: Buffer.from(FIREBASE_PRIVATE_KEY, 'base64').toString('utf8'),
-        };
-      } else {
-        const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-        if (raw) {
-          try {
-            serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-          } catch {
-            serviceAccount = JSON.parse(raw);
-          }
-        }
-      }
-      
-      if (serviceAccount) {
-        initializeApp({
-          credential: cert(serviceAccount),
-        });
-        initialized = true;
-      }
-    } catch (err) {
-      console.error("[Cashfree Webhook] Firebase Admin init error:", err);
-    }
-  }
-}
 
 function verifyHmacSignature(rawBody: string, timestamp: string, signature: string, secret: string): boolean {
   try {
@@ -70,8 +33,6 @@ export const handler: Handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
-
-  initFirebase();
 
   try {
     const headers = event.headers || {};
@@ -132,16 +93,15 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    if (!signatureVerified && signature) {
-      console.warn("[Cashfree Webhook] Signature verification failed for timestamp:", timestamp);
-      // Check if it's a test event ping from Cashfree Dashboard
-      try {
-        const parsed = JSON.parse(rawBody);
-        if (parsed.type === 'TEST_WEBHOOK' || parsed.data?.order?.order_id?.includes('test')) {
-          return { statusCode: 200, body: JSON.stringify({ status: "OK", message: "Test webhook verified" }) };
-        }
-      } catch {}
-      return { statusCode: 400, body: "Invalid signature" };
+    if (!signatureVerified) {
+      console.warn("[Cashfree Webhook] Signature verification failed or test probe received for timestamp:", timestamp);
+      // Return HTTP 200 with status OK so Cashfree dashboard endpoint verification succeeds,
+      // but do NOT execute database updates on unverified payloads
+      return { 
+        statusCode: 200, 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "OK", message: "Cashfree probe or unverified webhook acknowledged" }) 
+      };
     }
 
     const cashfree = new Cashfree(envMode, appId, secretsToTry[0]);
@@ -182,12 +142,11 @@ export const handler: Handler = async (event) => {
             return { statusCode: 200, body: "Order not confirmed as PAID by gateway" };
           }
 
-          if (getApps().length > 0) {
-            const db = getFirestore();
-            const bookingRef = db.collection("bookings").doc(bookingId);
-            const bookingSnap = await bookingRef.get();
+          const db = getAdminDb();
+          const bookingRef = db.collection("bookings").doc(bookingId);
+          const bookingSnap = await bookingRef.get();
 
-            if (bookingSnap.exists) {
+          if (bookingSnap.exists) {
               const bData = bookingSnap.data()!;
 
               // Idempotency: Prevent multiple fulfillment runs for the same order
@@ -283,7 +242,6 @@ export const handler: Handler = async (event) => {
               }
             }
           }
-        }
         break;
       }
 
@@ -296,20 +254,18 @@ export const handler: Handler = async (event) => {
           source: errorDetails.error_source
         });
 
-        if (getApps().length > 0) {
-          try {
-            const db = getFirestore();
-            await db.collection("bookings").doc(bookingId).update({
-              lastPaymentFailure: {
-                errorCode: errorDetails.error_code || 'PAYMENT_FAILED',
-                errorReason: errorDetails.error_reason || 'bank_or_user_decline',
-                errorSource: errorDetails.error_source || 'gateway',
-                timestamp: FieldValue.serverTimestamp()
-              }
-            });
-          } catch (logErr) {
-            console.warn("[Cashfree Webhook] Could not record payment failure to booking:", logErr);
-          }
+        try {
+          const db = getAdminDb();
+          await db.collection("bookings").doc(bookingId).update({
+            lastPaymentFailure: {
+              errorCode: errorDetails.error_code || 'PAYMENT_FAILED',
+              errorReason: errorDetails.error_reason || 'bank_or_user_decline',
+              errorSource: errorDetails.error_source || 'gateway',
+              timestamp: FieldValue.serverTimestamp()
+            }
+          });
+        } catch (logErr) {
+          console.warn("[Cashfree Webhook] Could not record payment failure to booking:", logErr);
         }
         break;
       }

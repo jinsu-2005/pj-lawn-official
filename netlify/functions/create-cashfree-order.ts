@@ -1,44 +1,6 @@
 import type { Handler } from '@netlify/functions';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getAdminDb, FieldValue } from './adminDb.ts';
 import { Cashfree, CFEnvironment } from 'cashfree-pg';
-
-let initialized = false;
-
-function initFirebase() {
-  if (!initialized && getApps().length === 0) {
-    try {
-      let serviceAccount: any = null;
-      const FIREBASE_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY;
-      
-      if (FIREBASE_PRIVATE_KEY) {
-        serviceAccount = {
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: Buffer.from(FIREBASE_PRIVATE_KEY, 'base64').toString('utf8'),
-        };
-      } else {
-        const raw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-        if (raw) {
-          try {
-            serviceAccount = JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
-          } catch {
-            serviceAccount = JSON.parse(raw);
-          }
-        }
-      }
-      
-      if (serviceAccount) {
-        initializeApp({
-          credential: cert(serviceAccount)
-        });
-        initialized = true;
-      }
-    } catch (e) {
-      console.error("[Firebase Admin] Initialization failed:", e);
-    }
-  }
-}
 
 export const handler: Handler = async (event) => {
   const headers = {
@@ -61,8 +23,6 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    initFirebase();
-
     const body = JSON.parse(event.body || '{}');
     const { bookingId, paymentType = 'advance' } = body;
 
@@ -92,13 +52,12 @@ export const handler: Handler = async (event) => {
     let eventName = 'Lawn Event';
 
     // Authoritative Server-Side Check: Verify booking in Firestore
-    if (getApps().length > 0) {
-      const db = getFirestore();
-      const bookingRef = db.collection('bookings').doc(bookingId);
-      const bookingSnap = await bookingRef.get();
+    const db = getAdminDb();
+    const bookingRef = db.collection('bookings').doc(bookingId);
+    const bookingSnap = await bookingRef.get();
 
-      if (bookingSnap.exists) {
-        const data = bookingSnap.data()!;
+    if (bookingSnap.exists) {
+      const data = bookingSnap.data()!;
 
         // Guard against invalid booking states
         if (data.bookingStatus === 'cancelled' || data.bookingStatus === 'rejected') {
@@ -136,7 +95,6 @@ export const handler: Handler = async (event) => {
         customerEmail = data.userEmail || data.email || customerEmail;
         eventName = data.eventType || eventName;
       }
-    }
 
     // Strict numerical boundary validation
     orderAmount = Math.round(orderAmount);
@@ -222,18 +180,15 @@ export const handler: Handler = async (event) => {
     }
 
     // Persist active order record to Firestore
-    if (getApps().length > 0) {
-      try {
-        const db = getFirestore();
-        await db.collection('bookings').doc(bookingId).update({
-          cashfreeOrderId: uniqueOrderId,
-          lastPaymentAttempt: FieldValue.serverTimestamp(),
-          lastPaymentType: paymentType,
-          lastOrderAmount: orderAmount
-        });
-      } catch (dbErr) {
-        console.warn("[Cashfree Backend] Failed to save cashfreeOrderId to booking doc:", dbErr);
-      }
+    try {
+      await db.collection('bookings').doc(bookingId).update({
+        cashfreeOrderId: uniqueOrderId,
+        lastPaymentAttempt: FieldValue.serverTimestamp(),
+        lastPaymentType: paymentType,
+        lastOrderAmount: orderAmount
+      });
+    } catch (dbErr) {
+      console.warn("[Cashfree Backend] Failed to save cashfreeOrderId to booking doc:", dbErr);
     }
 
     return {

@@ -545,10 +545,11 @@ export default function Booking() {
                       {errors.email && <p className="text-red-400 text-xs">{errors.email.message}</p>}
                     </div>
                     
-                    <div className="grid sm:grid-cols-3 gap-5">
+                    <input type="hidden" {...register('timeSlot')} value="5:00 PM – 10:00 PM" />
+                    <div className="grid sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Event Type</label>
-                        <select {...register('eventType')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-3 py-3 text-cream-200 text-xs sm:text-sm appearance-none focus:outline-none focus:border-gold-400/50">
+                        <select {...register('eventType')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 text-sm appearance-none focus:outline-none focus:border-gold-400/50">
                           <option value="Birthday Party">Birthday Party</option>
                           <option value="Anniversary">Anniversary</option>
                           <option value="Family Function">Family Function</option>
@@ -563,17 +564,8 @@ export default function Booking() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Timing (Fixed)</label>
-                        <div className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 text-xs sm:text-sm flex items-center justify-between">
-                          <span className="font-semibold text-gold-400">5:00 PM – 10:00 PM</span>
-                          <span className="text-[10px] text-cream-400/70 font-mono tracking-wider uppercase bg-white/5 px-2 py-0.5 rounded">Always 5 to 10 PM</span>
-                        </div>
-                        <input type="hidden" {...register('timeSlot')} value="5:00 PM – 10:00 PM" />
-                      </div>
-
-                      <div className="space-y-2">
                         <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Estimated Guests</label>
-                        <input type="number" {...register('guestCount', { valueAsNumber: true })} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 text-xs sm:text-sm focus:outline-none focus:border-gold-400/50" />
+                        <input type="number" {...register('guestCount', { valueAsNumber: true })} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 text-sm focus:outline-none focus:border-gold-400/50" />
                         {errors.guestCount && <p className="text-red-400 text-xs">{errors.guestCount.message}</p>}
                       </div>
                     </div>
