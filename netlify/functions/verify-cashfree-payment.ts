@@ -168,38 +168,85 @@ export const handler: Handler = async (event) => {
               to: [customerEmail],
               subject: `Payment Confirmed - PJ Lawn Booking (₹${paidThisOrder.toLocaleString('en-IN')})`,
               html: `
-                <div style="background-color: #0d0f0e; color: #f4ede4; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px 20px;">
-                  <div style="max-width: 580px; margin: 0 auto; background: #141816; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 12px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                    <div style="text-align: center; margin-bottom: 24px;">
-                      <h1 style="color: #d4af37; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 2px;">PJ LAWN</h1>
-                      <p style="color: #8fa095; font-size: 13px; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Official Payment Receipt</p>
-                    </div>
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Payment Receipt</title></head>
+<body style="margin: 0; padding: 0; background-color: #060606; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f0e8dc;">
+  <div style="width: 100%; background-color: #060606; padding: 30px 0;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #111111; border: 1px solid rgba(232, 201, 109, 0.35); border-radius: 12px; overflow: hidden; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85);">
+      <tr>
+        <td align="center" style="background: linear-gradient(180deg, #181818 0%, #111111 100%); padding: 32px 20px; border-bottom: 1px solid rgba(232, 201, 109, 0.25);">
+          <div style="font-family: Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: bold; color: #e8c96d; letter-spacing: 4px; margin: 0 0 4px 0; text-transform: uppercase;">PJ LAWN</div>
+          <p style="font-size: 11px; color: #d9cdb5; letter-spacing: 2px; text-transform: uppercase; margin: 0; font-weight: 600;">Nagercoil's Premier Open-Air Venue</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 32px 26px; font-size: 15px; line-height: 1.6; color: #ede5d0;">
+          <div style="display: inline-block; padding: 6px 14px; font-size: 11px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 4px; margin-bottom: 18px; background-color: rgba(78, 134, 38, 0.25); color: #8ce04a; border: 1px solid rgba(78, 134, 38, 0.5);">
+            Payment Confirmed &bull; Date Secured
+          </div>
+          <h2 style="color: #fefdf9; margin-top: 0; margin-bottom: 12px; font-size: 22px; font-family: Georgia, serif;">Payment Received Successfully!</h2>
+          <p style="margin: 0 0 14px 0; color: #ede5d0; font-size: 15px;">Hello <strong style="color: #ffffff;">${bookingData.userName || 'Valued Guest'}</strong>, we have received your payment for your upcoming event at PJ Lawn.</p>
+          
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; background-color: #171717; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; margin: 20px 0;">
+            <tr>
+              <td style="padding: 16px 20px;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td align="left" style="padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #d9cdb5; font-size: 14px;">Receipt / Order ID</td>
+                    <td align="right" style="padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #fefdf9; font-family: monospace; font-size: 13px;">${orderId}</td>
+                  </tr>
+                  <tr>
+                    <td align="left" style="padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #d9cdb5; font-size: 14px;">Event Date</td>
+                    <td align="right" style="padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #e8c96d; font-weight: bold; font-size: 14px;">${bookingData.eventDate}</td>
+                  </tr>
+                  <tr>
+                    <td align="left" style="padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #d9cdb5; font-size: 14px;">Event Type</td>
+                    <td align="right" style="padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #fefdf9; font-weight: bold; font-size: 14px;">${bookingData.eventType || 'Celebration'}</td>
+                  </tr>
+                  <tr>
+                    <td align="left" style="padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #d9cdb5; font-size: 14px;">Payment Method</td>
+                    <td align="right" style="padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #fefdf9; font-weight: bold; font-size: 14px;">${paymentMethod.toUpperCase()}</td>
+                  </tr>
+                  <tr>
+                    <td align="left" style="padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #8ce04a; font-weight: bold; font-size: 14px;">Amount Paid Today</td>
+                    <td align="right" style="padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: #8ce04a; font-weight: bold; font-size: 16px;">₹${paidThisOrder.toLocaleString('en-IN')}</td>
+                  </tr>
+                  <tr>
+                    <td align="left" style="padding: 9px 0; ${remainingBalance > 0 ? 'border-bottom: 1px solid rgba(255, 255, 255, 0.08);' : ''} color: #d9cdb5; font-size: 14px;">Total Booking Value</td>
+                    <td align="right" style="padding: 9px 0; ${remainingBalance > 0 ? 'border-bottom: 1px solid rgba(255, 255, 255, 0.08);' : ''} color: #fefdf9; font-size: 14px;">₹${totalAmount.toLocaleString('en-IN')}</td>
+                  </tr>
+                  ${remainingBalance > 0 ? `
+                  <tr>
+                    <td align="left" style="padding: 9px 0; color: #e8c96d; font-size: 14px;">Remaining Balance</td>
+                    <td align="right" style="padding: 9px 0; color: #e8c96d; font-weight: bold; font-size: 15px;">₹${remainingBalance.toLocaleString('en-IN')}</td>
+                  </tr>
+                  ` : `
+                  <tr>
+                    <td align="left" style="padding: 9px 0; color: #8ce04a; font-size: 14px;">Balance Status</td>
+                    <td align="right" style="padding: 9px 0; color: #8ce04a; font-weight: bold; font-size: 14px;">Paid in Full</td>
+                  </tr>
+                  `}
+                </table>
+              </td>
+            </tr>
+          </table>
 
-                    <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: center;">
-                      <h2 style="color: #4ade80; margin: 0 0 6px 0; font-size: 18px;">Payment Verified Successfully</h2>
-                      <p style="color: #d1d5db; margin: 0; font-size: 14px;">Your event date is secured on the calendar.</p>
-                    </div>
-
-                    <div style="background: #1a1f1c; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-                      <p style="margin: 6px 0; font-size: 14px;"><strong>Customer:</strong> ${bookingData.userName || 'Valued Guest'}</p>
-                      <p style="margin: 6px 0; font-size: 14px;"><strong>Event Date:</strong> ${bookingData.eventDate}</p>
-                      <p style="margin: 6px 0; font-size: 14px;"><strong>Event Type:</strong> ${bookingData.eventType || 'Celebration'}</p>
-                      <p style="margin: 6px 0; font-size: 14px;"><strong>Payment Mode:</strong> ${paymentMethod.toUpperCase()}</p>
-                      <p style="margin: 6px 0; font-size: 14px;"><strong>Order ID:</strong> <code style="color: #d4af37;">${orderId}</code></p>
-                      <p style="margin: 6px 0; font-size: 14px;"><strong>Payment Ref:</strong> <code style="color: #d4af37;">${cfPaymentId}</code></p>
-                      <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 12px 0;" />
-                      <p style="margin: 6px 0; font-size: 16px; color: #4ade80;"><strong>Amount Paid Today:</strong> ₹${paidThisOrder.toLocaleString('en-IN')}</p>
-                      <p style="margin: 6px 0; font-size: 14px; color: #d4af37;"><strong>Total Booking Value:</strong> ₹${totalAmount.toLocaleString('en-IN')}</p>
-                      <p style="margin: 6px 0; font-size: 14px; color: ${remainingBalance > 0 ? '#facc15' : '#4ade80'};">
-                        <strong>Remaining Balance:</strong> ${remainingBalance > 0 ? `₹${remainingBalance.toLocaleString('en-IN')}` : 'Paid in Full (₹0)'}
-                      </p>
-                    </div>
-
-                    <div style="text-align: center;">
-                      <a href="https://pjlawn.netlify.app/dashboard" style="background: #d4af37; color: #0d0f0e; font-weight: 700; text-decoration: none; padding: 14px 28px; border-radius: 8px; display: inline-block; font-size: 14px;">View Booking in Dashboard</a>
-                    </div>
-                  </div>
-                </div>
+          <div style="text-align: center; margin-top: 26px; margin-bottom: 8px;">
+            <a href="https://pjlawn.netlify.app/dashboard" style="display: inline-block; background-color: #e8c96d; color: #0a0a0a !important; font-weight: 900; text-decoration: none; padding: 14px 30px; border-radius: 8px; letter-spacing: 1.5px; text-transform: uppercase; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">View Booking & PDF Receipt</a>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td align="center" style="background-color: #0a0a0a; padding: 22px 20px; font-size: 12px; color: #b3a692; border-top: 1px solid rgba(255, 255, 255, 0.08); line-height: 1.6;">
+          <p style="margin: 0 0 6px 0; color: #d9cdb5; font-size: 12px;"><strong>PJ Lawn</strong> &bull; Paul Vathiyar Compound, Gandhi Nagar, Kurusady, Nagercoil, Tamil Nadu 629004</p>
+          <p style="margin: 0; color: #b3a692;">Phone: <a href="tel:+919489724975" style="color: #e8c96d; text-decoration: none; font-weight: bold;">+91 94897 24975</a> &bull; <a href="https://pjlawn.netlify.app" style="color: #e8c96d; text-decoration: none;">pjlawn.netlify.app</a></p>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>
               `
             });
             console.log(`[Cashfree Backend] Receipt email dispatched to ${customerEmail}`);
