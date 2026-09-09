@@ -36,7 +36,7 @@
   - [3. Client-Side Live PDF Receipt Generator](#3-client-side-live-pdf-receipt-generator)
   - [4. Centralized High-Performance Auth Engine](#4-centralized-high-performance-auth-engine)
   - [5. Administrative Suite & Custom Claims Control](#5-administrative-suite--custom-claims-control)
-  - [6. AI Venue Concierge](#6-ai-venue-concierge)
+  - [6. AI Chatbot](#6-ai-chatbot)
   - [7. Production Performance & Optimization](#7-production-performance--optimization)
 - [🤖 AI-Assisted Development](#-ai-assisted-development)
 - [📁 Directory Architecture](#-directory-architecture)
@@ -132,7 +132,7 @@ Integrated strictly following the Cashfree PG v6 specification and API version `
 - **Booking Lifecycle Management**: Approve, reject, adjust base pricing, and manually lock out maintenance dates.
 - **One-Click Claims Setup (`set-admin-claim`)**: Secure internal function to promote super-admin accounts using environment-protected secrets.
 
-### 6. AI Venue Concierge
+### 6. AI Chatbot
 - **Interactive Assistant (`ChatbotWidget.tsx`)**: Powered by Google Gemini 2.5 Flash through the official `@google/genai` SDK.
 - **Domain-Specific Knowledge**: Answers guest queries about capacity (50–300 guests), catering policies, power backup, parking amenities, location directions, and booking terms in real time.
 
