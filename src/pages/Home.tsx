@@ -150,7 +150,7 @@ export default function Home() {
               to="/gallery" 
               variant="outline" 
               size="lg" 
-              className="w-full py-4 text-sm font-black tracking-widest uppercase rounded-2xl bg-black/40 backdrop-blur-md border border-gold-400/60 text-gold-300 shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:bg-gold-400 hover:text-black hover:scale-105 active:scale-98 transition-all duration-300"
+              className="w-full py-4 text-sm font-bold tracking-[0.2em] uppercase rounded-2xl bg-black/30 backdrop-blur-lg border border-gold-400/50 text-gold-300 shadow-[0_6px_20px_rgba(0,0,0,0.45)] hover:bg-gold-400 hover:text-black hover:border-gold-400 hover:shadow-[0_8px_28px_rgba(212,175,55,0.25)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 ease-out"
             >
               View Gallery
             </Button>
