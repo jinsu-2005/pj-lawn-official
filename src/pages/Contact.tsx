@@ -54,7 +54,7 @@ export default function Contact() {
               href="https://wa.me/919489724975?text=Hi%2C%20I'd%20like%20to%20know%20more%20about%20booking%20PJ%20Lawn%20for%20my%20event." 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-charcoal-950 font-bold text-sm transition-all shadow-lg shadow-[#25D366]/20 active:scale-95"
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-black font-black text-sm transition-all shadow-lg shadow-[#25D366]/20 active:scale-95"
             >
               <WhatsAppIcon className="w-5 h-5" /> Chat on WhatsApp
             </a>

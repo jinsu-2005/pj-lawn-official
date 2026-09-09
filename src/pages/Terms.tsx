@@ -21,7 +21,7 @@ export default function Terms() {
       <section className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
         <div className="bg-charcoal-800 border border-white/5 p-8 sm:p-10 rounded-2xl text-cream-300 space-y-8 leading-relaxed text-sm sm:text-base">
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">1. Venue Overview & Scope of Service</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">1. Venue Overview & Scope of Service</h2>
             <p>
               PJ Lawn is an open-air outdoor event venue located at Paul Vathiyar Compound, Gandhi Nagar, Kurusady, Nagercoil 629004. 
             </p>
@@ -31,7 +31,7 @@ export default function Terms() {
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">2. Operating Hours & Decoration Setup</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">2. Operating Hours & Decoration Setup</h2>
             <ul className="list-disc list-inside space-y-2 pl-4">
               <li><strong>Event Session Timing:</strong> Guest event hours are strictly from <strong>5:00 PM to 10:00 PM</strong> in the evening.</li>
               <li><strong>Morning Setup Access:</strong> Outside decorators, setup crews, and caterers are permitted access to the lawn <strong>from morning onwards</strong> on the booked event date to set up stages, lighting, floral arrangements, and dining tables.</li>
@@ -40,7 +40,7 @@ export default function Terms() {
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">3. Outside Catering & Decorators Policy</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">3. Outside Catering & Decorators Policy</h2>
             <ul className="list-disc list-inside space-y-2 pl-4">
               <li>Customers have complete freedom to choose their preferred outside caterers, decorators, photographers, and entertainers.</li>
               <li>Customers are responsible for ensuring that external caterers maintain food hygiene and cleanliness in the preparation and dining areas.</li>
@@ -49,7 +49,7 @@ export default function Terms() {
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">4. Payment & Booking Confirmation</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">4. Payment & Booking Confirmation</h2>
             <ul className="list-disc list-inside space-y-2 pl-4">
               <li>To confirm and secure a date on the calendar, payment of the required advance amount must be completed within 24 hours of booking request approval.</li>
               <li>The booking is officially confirmed once the advance payment is received.</li>
@@ -58,14 +58,14 @@ export default function Terms() {
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">5. Conduct, Sound & Property Care</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">5. Conduct, Sound & Property Care</h2>
             <p>
               Customers and their guests are expected to maintain orderly conduct. Any physical damage to the lawn, structure, restrooms, or lighting fixtures caused during the event will be billed directly to the customer. Sound systems and loud music must strictly adhere to local municipal guidelines.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">6. Contact & Inquiries</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">6. Contact & Inquiries</h2>
             <p>
               For any questions, date adjustments, or clarifications regarding these terms, please contact PJ Lawn management at <a href="tel:+919489724975" className="text-gold-400 hover:underline font-semibold">+91 94897 24975</a> or via WhatsApp.
             </p>

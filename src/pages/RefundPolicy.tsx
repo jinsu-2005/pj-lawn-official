@@ -21,7 +21,7 @@ export default function RefundPolicy() {
       <section className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
         <div className="bg-charcoal-800 border border-white/5 p-8 sm:p-10 rounded-2xl text-cream-300 space-y-8 leading-relaxed text-sm sm:text-base">
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">1. Booking Advance Policy</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">1. Booking Advance Policy</h2>
             <p>
               To secure and exclusively block a date on the PJ Lawn calendar, customers are required to pay a booking advance upon request approval. 
             </p>
@@ -31,7 +31,7 @@ export default function RefundPolicy() {
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">2. Date Rescheduling Option</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">2. Date Rescheduling Option</h2>
             <p>
               We understand that family plans can change. If you need to postpone or change your event date:
             </p>
@@ -43,7 +43,7 @@ export default function RefundPolicy() {
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">3. Cancellation Timelines</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">3. Cancellation Timelines</h2>
             <p>
               If a customer chooses to cancel a confirmed booking:
             </p>
@@ -58,21 +58,21 @@ export default function RefundPolicy() {
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">4. Force Majeure & Management Cancellation</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">4. Force Majeure & Management Cancellation</h2>
             <p>
               In the rare event that PJ Lawn management is unable to provide the venue due to unforeseen emergencies, extreme weather, government orders, or structural force majeure, a <strong>100% full refund</strong> (including the entire advance deposit) will be returned immediately to the customer.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">5. Refund Method & Processing Time</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">5. Refund Method & Processing Time</h2>
             <p>
               All eligible refunds are processed electronically through our authorized payment gateway (Cashfree Payments). Approved refunds will be credited directly back to the customer's original payment source (UPI / NetBanking / Debit Card) within <strong>5 to 7 business days</strong>.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">6. Help & Support</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">6. Help & Support</h2>
             <p>
               For cancellation or rescheduling assistance, please contact us directly via WhatsApp or phone at <a href="tel:+919489724975" className="text-gold-400 hover:underline font-semibold">+91 94897 24975</a>.
             </p>

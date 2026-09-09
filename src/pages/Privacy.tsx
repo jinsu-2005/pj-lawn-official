@@ -21,7 +21,7 @@ export default function Privacy() {
       <section className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
         <div className="bg-charcoal-800 border border-white/5 p-8 sm:p-10 rounded-2xl text-cream-300 space-y-8 leading-relaxed text-sm sm:text-base">
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">1. Information We Collect</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">1. Information We Collect</h2>
             <p>
               When you submit a booking request or log in to our dashboard, we collect personal information that you provide to us, including:
             </p>
@@ -33,7 +33,7 @@ export default function Privacy() {
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">2. How We Use Your Information</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">2. How We Use Your Information</h2>
             <p>
               We use the collected information to:
             </p>
@@ -46,7 +46,7 @@ export default function Privacy() {
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">3. Data Sharing & Security</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">3. Data Sharing & Security</h2>
             <p>
               Your data is stored securely using Firebase Authentication, Firestore databases, and Firebase Storage. We do not sell, rent, or trade your personal information. We share data only with:
             </p>
@@ -57,14 +57,14 @@ export default function Privacy() {
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">4. Your Rights</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">4. Your Rights</h2>
             <p>
               You have the right to access the personal information we hold about you. You can review your bookings at any time via your customer dashboard. If you wish to delete your account or wipe your contact history, please get in touch with us via our contact form.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-serif text-cream-100 mb-4 border-b border-white/5 pb-2">5. Updates to This Policy</h2>
+            <h2 className="text-xl font-sans font-bold tabular-nums text-cream-100 mb-4 border-b border-white/5 pb-2">5. Updates to This Policy</h2>
             <p>
               We may update this Privacy Policy from time to time to reflect changes in our services or legal regulations. All updates will be published on this page.
             </p>

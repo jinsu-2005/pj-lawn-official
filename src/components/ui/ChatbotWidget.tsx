@@ -238,6 +238,24 @@ export function ChatbotWidget() {
     }, 20)
   }
 
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Auto-hide floating chatbot button whenever a modal, drawer, or sheet is open
+  useEffect(() => {
+    const checkModal = () => {
+      const modal = document.querySelector(
+        '[role="dialog"], [aria-modal="true"], [data-modal-open="true"], .fixed.inset-0.z-\\[9999\\], .fixed.inset-0.z-\\[99999\\]'
+      )
+      setIsModalOpen(!!modal)
+    }
+
+    const observer = new MutationObserver(checkModal)
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true })
+    checkModal()
+
+    return () => observer.disconnect()
+  }, [])
+
   const handleSend = (e?: React.FormEvent) => {
     e?.preventDefault()
     sendMessage(input)
@@ -247,7 +265,7 @@ export function ChatbotWidget() {
     <>
       {/* Floating Action Button — polished AI assistant style */}
       <AnimatePresence>
-        {!isOpen && (
+        {!isOpen && !isModalOpen && (
           <motion.button
             key="fab"
             initial={{ scale: 0, opacity: 0 }}
@@ -256,7 +274,7 @@ export function ChatbotWidget() {
             whileHover={{ scale: 1.06 }}
             whileTap={{ scale: 0.94 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-50 group"
+            className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-30 group"
             aria-label="Open AI Assistant"
           >
             {/* Pulse ring */}

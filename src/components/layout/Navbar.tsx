@@ -3,9 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Shield, LogOut as LogOutIcon } from 'lucide-react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { auth, googleProvider, db } from '@/lib/firebase'
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { useAuth } from '@/context/AuthContext'
 import MobileBottomNav from './MobileBottomNav'
 import MobileMenuSheet from './MobileMenuSheet'
 
@@ -25,52 +23,35 @@ const navLinks = [
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const { user, isAdmin, loginWithGoogle, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser)
-      if (currentUser) {
-        try {
-          const docRef = doc(db, 'admins', currentUser.uid)
-          const docSnap = await getDoc(docRef)
-          let isInvited = false
-          if (currentUser.email) {
-            const inviteRef = doc(db, 'admin_invites', currentUser.email.toLowerCase().trim())
-            const inviteSnap = await getDoc(inviteRef)
-            if (inviteSnap.exists()) isInvited = true
-          }
-          const isSuperAdmin = currentUser.email && [
-            'jinsu.j2005@gmail.com',
-            'jinsukapgreen@gmail.com'
-          ].includes(currentUser.email.toLowerCase().trim())
-          setIsAdmin(!!docSnap.exists() || isInvited || !!isSuperAdmin)
-        } catch {
-          setIsAdmin(false)
-        }
-      } else {
-        setIsAdmin(false)
-      }
-    })
-    return () => unsubscribe()
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const handleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider)
+      await loginWithGoogle()
       navigate('/dashboard')
     } catch (err) {
       console.error('Login failed:', err)
     }
   }
 
-  const handleLogout = () => {
-    signOut(auth).then(() => navigate('/'))
+  const handleLogout = async () => {
+    try {
+      await logout()
+      navigate('/')
+    } catch (err) {
+      console.error('Logout failed:', err)
+    }
   }
 
   useEffect(() => {

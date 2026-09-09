@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Home, Image as ImageIcon, Calendar, Menu, X, Shield } from 'lucide-react'
+import { Home, Image as ImageIcon, Calendar, Menu, X } from 'lucide-react'
 
 // Basic fallback for cn since we might not have it reliably imported from @/lib/utils if the alias is tricky
 import { clsx, type ClassValue } from 'clsx'
@@ -15,7 +15,7 @@ interface MobileBottomNavProps {
 }
 
 export default function MobileBottomNav({
-  isAdmin = false,
+  isAdmin: _isAdmin = false,
   isMobileMenuOpen,
   setIsMobileMenuOpen,
 }: MobileBottomNavProps) {
@@ -51,32 +51,18 @@ export default function MobileBottomNav({
           <span className="text-[10px] font-semibold tracking-wider uppercase">Gallery</span>
         </Link>
 
-        {/* Bookings / Admin Portal */}
-        {isAdmin ? (
-          <Link 
-            to="/admin" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={cn(
-              "flex flex-col items-center justify-center w-16 gap-1 p-1 transition-colors relative",
-              location.pathname === '/admin' ? "text-gold-400" : "text-cream-400 hover:text-cream-200"
-            )}
-          >
-            <Shield size={22} className={cn("transition-transform", location.pathname === '/admin' && "scale-110 text-gold-400")} />
-            <span className="text-[10px] font-bold tracking-wider uppercase text-gold-400">Admin</span>
-          </Link>
-        ) : (
-          <Link 
-            to="/dashboard" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={cn(
-              "flex flex-col items-center justify-center w-16 gap-1 p-1 transition-colors relative",
-              location.pathname === '/dashboard' ? "text-gold-400" : "text-cream-400 hover:text-cream-200"
-            )}
-          >
-            <Calendar size={22} className={cn("transition-transform", location.pathname === '/dashboard' && "scale-110")} />
-            <span className="text-[10px] font-semibold tracking-wider uppercase">Bookings</span>
-          </Link>
-        )}
+        {/* Bookings */}
+        <Link 
+          to="/dashboard" 
+          onClick={() => setIsMobileMenuOpen(false)}
+          className={cn(
+            "flex flex-col items-center justify-center w-16 gap-1 p-1 transition-colors relative",
+            location.pathname === '/dashboard' ? "text-gold-400" : "text-cream-400 hover:text-cream-200"
+          )}
+        >
+          <Calendar size={22} className={cn("transition-transform", location.pathname === '/dashboard' && "scale-110")} />
+          <span className="text-[10px] font-semibold tracking-wider uppercase">Bookings</span>
+        </Link>
 
         {/* Menu (Hamburger) */}
         <button 

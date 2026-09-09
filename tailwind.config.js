@@ -9,6 +9,7 @@ export default {
       colors: {
         // Charcoal backgrounds
         charcoal: {
+          950: '#050505',
           900: '#0a0a0a',
           850: '#111111',
           800: '#161616',
@@ -44,8 +45,8 @@ export default {
         },
       },
       fontFamily: {
-        serif: ['Cormorant Garamond', 'Georgia', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['StandardNumbers', 'Cormorant Garamond', 'Georgia', 'serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       fontSize: {
         'display-2xl': ['4.5rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],

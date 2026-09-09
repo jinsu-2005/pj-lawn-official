@@ -1,26 +1,29 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import Lenis from 'lenis'
 
-// Layout
+// Layout & UI
 import Layout from './components/layout/Layout'
+import PageLoader from './components/ui/PageLoader'
+import { usePageTitle } from './hooks/usePageTitle'
 
-// Public Pages
+// Eager Primary Landing Page (Instant First Contentful Paint)
 import Home from './pages/Home'
-import About from './pages/About'
-import Events from './pages/Events'
-import Gallery from './pages/Gallery'
-import Amenities from './pages/Amenities'
-import Location from './pages/Location'
-import Contact from './pages/Contact'
-import Booking from './pages/Booking'
 
-import Dashboard from './pages/Dashboard'
-import Admin from './pages/Admin'
-
-import Terms from './pages/Terms'
-import Privacy from './pages/Privacy'
-import RefundPolicy from './pages/RefundPolicy'
+// Route-Level Code Splitting for Sub-Pages (Dramatically Shrinks Main Bundle)
+const About = lazy(() => import('./pages/About'))
+const Events = lazy(() => import('./pages/Events'))
+const Gallery = lazy(() => import('./pages/Gallery'))
+const Amenities = lazy(() => import('./pages/Amenities'))
+const Location = lazy(() => import('./pages/Location'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Booking = lazy(() => import('./pages/Booking'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Admin = lazy(() => import('./pages/Admin'))
+const Terms = lazy(() => import('./pages/Terms'))
+const Privacy = lazy(() => import('./pages/Privacy'))
+const RefundPolicy = lazy(() => import('./pages/RefundPolicy'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 declare global {
   interface Window {
@@ -28,8 +31,10 @@ declare global {
   }
 }
 
-function ScrollToTop() {
+function NavigationHandler() {
   const { pathname } = useLocation()
+  usePageTitle()
+
   useEffect(() => {
     if (window.appLenis) {
       window.appLenis.scrollTo(0, { immediate: true })
@@ -37,6 +42,7 @@ function ScrollToTop() {
       window.scrollTo(0, 0)
     }
   }, [pathname])
+
   return null
 }
 
@@ -69,24 +75,28 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <ScrollToTop />
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="about" element={<About />} />
-          <Route path="events" element={<Events />} />
-          <Route path="gallery" element={<Gallery />} />
-          <Route path="amenities" element={<Amenities />} />
-          <Route path="location" element={<Location />} />
-          <Route path="contact" element={<Contact />} />
-          <Route path="book" element={<Booking />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="admin" element={<Admin />} />
-          <Route path="terms" element={<Terms />} />
-          <Route path="privacy" element={<Privacy />} />
-          <Route path="refund-policy" element={<RefundPolicy />} />
-        </Route>
-      </Routes>
+      <NavigationHandler />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="about" element={<About />} />
+            <Route path="events" element={<Events />} />
+            <Route path="gallery" element={<Gallery />} />
+            <Route path="amenities" element={<Amenities />} />
+            <Route path="location" element={<Location />} />
+            <Route path="contact" element={<Contact />} />
+            <Route path="book" element={<Booking />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="admin" element={<Admin />} />
+            <Route path="terms" element={<Terms />} />
+            <Route path="privacy" element={<Privacy />} />
+            <Route path="refund-policy" element={<RefundPolicy />} />
+            {/* Catch-all 404 Route */}
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }

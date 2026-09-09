@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Calendar, Users, Clock, Info, CheckCircle2, MessageCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Calendar, Users, Clock, Info, CheckCircle2, MessageCircle, ChevronLeft, ChevronRight, LogIn, AlertCircle, X, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,8 +8,7 @@ import * as z from 'zod'
 import { format } from 'date-fns'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/style.css'
-import { auth, googleProvider } from '@/lib/firebase'
-import { signInWithPopup, onAuthStateChanged } from 'firebase/auth'
+import { useAuth } from '@/context/AuthContext'
 import { checkAndHoldDate, createBooking, getPricingTiers, PricingTier } from '@/lib/bookingService'
 import { db } from '@/lib/firebase'
 import { collection, onSnapshot } from 'firebase/firestore'
@@ -28,15 +27,17 @@ const bookingSchema = z.object({
 type BookingFormData = z.infer<typeof bookingSchema>
 
 export default function Booking() {
+  const { user: currentUser, loginWithGoogle } = useAuth()
   const [step, setStep] = useState(1)
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([])
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [toastNotification, setToastNotification] = useState<{ message: string; type: 'info' | 'error' } | null>(null)
+  const [shakeCalendar, setShakeCalendar] = useState(false)
+  const calendarRef = useRef<HTMLDivElement>(null)
   const [unavailableDates, setUnavailableDates] = useState<Date[]>([])
 
-  const { register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<BookingFormData>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue, getValues, trigger } = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       guestCount: 100,
@@ -47,19 +48,12 @@ export default function Booking() {
   })
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user)
-      if (user) {
-        // Pre-fill if missing
-        const values = getValues()
-        if (!values.name && user.displayName) setValue('name', user.displayName)
-        if (!values.email && user.email) setValue('email', user.email)
-      }
-    })
-    return () => unsubscribe()
-  }, [setValue, getValues])
-
-
+    if (currentUser) {
+      const values = getValues()
+      if (!values.name && currentUser.displayName) setValue('name', currentUser.displayName)
+      if (!values.email && currentUser.email) setValue('email', currentUser.email)
+    }
+  }, [currentUser, setValue, getValues])
 
   const watchDate = watch('date')
   const watchGuestCount = watch('guestCount')
@@ -75,10 +69,23 @@ export default function Booking() {
   // Parse current date string to Date object for DayPicker
   const selectedDateObj = watchDate ? new Date(`${watchDate}T00:00:00`) : undefined;
   
+  const showToast = (message: string, type: 'info' | 'error' = 'info') => {
+    setToastNotification({ message, type })
+  }
+
+  // Toast auto-dismiss timer
+  useEffect(() => {
+    if (toastNotification) {
+      const timer = setTimeout(() => setToastNotification(null), 3500)
+      return () => clearTimeout(timer)
+    }
+  }, [toastNotification])
+
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       // Form expects string date
       setValue('date', format(date, 'yyyy-MM-dd'), { shouldValidate: true })
+      setToastNotification(null)
     }
   }
 
@@ -115,55 +122,84 @@ export default function Booking() {
   }, [watchGuestCount, pricingTiers])
 
   const handleNextStep = async () => {
-    setError(null)
+    setToastNotification(null)
     if (step === 1) {
       if (!watchDate) {
-        setError('Please select a date.')
+        showToast('Please select a date', 'info')
+        setShakeCalendar(true)
+        setTimeout(() => setShakeCalendar(false), 500)
+        if (calendarRef.current) {
+          calendarRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
         return
       }
-      // Check date availability (client-side mock hold for now, real hold will be at submit or via auth)
       setStep(2)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (step === 2) {
-      if (!watchName || !watchPhone) {
-        setError('Please fill in required contact details.')
+      const isValid = await trigger(['name', 'phone', 'eventType', 'guestCount'])
+      if (!isValid || !watchName || !watchPhone) {
+        // Form field errors are cleanly displayed directly under each invalid input
+        const firstErrorEl = document.querySelector('input[name="name"], input[name="phone"]') as HTMLElement | null
+        if (firstErrorEl) {
+          firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          firstErrorEl.focus()
+        }
         return
       }
       setStep(3)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
   const navigateToStep = (targetStep: number) => {
-    setError(null)
+    setToastNotification(null)
     if (targetStep === 1) {
       setStep(1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (targetStep === 2) {
       if (!watchDate) {
-        setError('Please select a date first.')
+        showToast('Please select a date', 'info')
+        setShakeCalendar(true)
+        setTimeout(() => setShakeCalendar(false), 500)
+        if (calendarRef.current) {
+          calendarRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
         return
       }
       setStep(2)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (targetStep === 3) {
       if (!watchDate) {
-        setError('Please select a date first.')
+        showToast('Please select a date', 'info')
+        setShakeCalendar(true)
+        setTimeout(() => setShakeCalendar(false), 500)
+        if (calendarRef.current) {
+          calendarRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
         return
       }
       if (!watchName || !watchPhone) {
-        setError('Please fill in contact details first.')
+        setStep(2)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        trigger(['name', 'phone'])
         return
       }
       setStep(3)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
   const onSubmit = async (data: BookingFormData) => {
-    setError(null)
+    setToastNotification(null)
     setIsSubmitting(true)
     try {
       // 1. Authenticate User (Google Sign-In)
-      let user = auth.currentUser
+      let user = currentUser
       if (!user) {
-        const result = await signInWithPopup(auth, googleProvider)
-        user = result.user
+        user = await loginWithGoogle()
+        if (!user) {
+          throw new Error("Authentication failed. Please sign in to submit.")
+        }
       }
 
       // 2. Transaction to check and hold date
@@ -216,33 +252,127 @@ export default function Booking() {
       setStep(4)
     } catch (err: any) {
       console.error(err)
-      setError(err.message || 'An error occurred during booking. Please try again.')
+      showToast(err.message || 'Booking failed. Please try again.', 'error')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="pt-32 pb-24 min-h-screen bg-charcoal-900">
-      <section className="container mx-auto px-4 mb-12 text-center max-w-3xl">
-        <motion.p 
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-          className="text-gold-400 uppercase text-xs tracking-widest font-medium mb-4"
+    <div className={`min-h-screen bg-charcoal-900 md:bg-transparent relative overflow-hidden ${step === 4 ? 'pt-20 sm:pt-24 pb-8' : 'pt-32 pb-24'}`}>
+      {/* Mobile-Only Ambient Sparkles: Just a few subtle delicate accents around the page */}
+      <div className="md:hidden pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
+        {/* Sparkle 1: Top Left */}
+        <div 
+          className="absolute top-24 left-4 text-gold-400/40 sparkle-twinkle" 
+          style={{ animationDuration: '3s' }}
         >
-          Secure Your Date
-        </motion.p>
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-          className="text-display-md font-serif text-cream-50"
-        >
-          Book Your Event
-        </motion.h1>
-      </section>
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" />
+          </svg>
+        </div>
 
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl">
-        <div className="grid lg:grid-cols-12 gap-8">
+        {/* Sparkle 2: Top Right */}
+        <div 
+          className="absolute top-36 right-5 text-gold-300/35 sparkle-float" 
+          style={{ animationDuration: '4.5s', animationDelay: '0.8s' }}
+        >
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" />
+          </svg>
+        </div>
+
+        {/* Sparkle 3: Mid Left */}
+        <div 
+          className="absolute top-[45%] left-3 text-gold-400/30 sparkle-twinkle" 
+          style={{ animationDuration: '3.6s', animationDelay: '1.5s' }}
+        >
+          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" />
+          </svg>
+        </div>
+
+        {/* Sparkle 4: Mid Right */}
+        <div 
+          className="absolute top-[65%] right-4 text-gold-300/35 sparkle-float" 
+          style={{ animationDuration: '5s', animationDelay: '0.5s' }}
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" />
+          </svg>
+        </div>
+
+        {/* Sparkle 5: Bottom Left */}
+        <div 
+          className="absolute bottom-28 left-6 text-gold-400/30 sparkle-twinkle" 
+          style={{ animationDuration: '4.2s', animationDelay: '2s' }}
+        >
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Sleek Floating Toast Notification - Non-intrusive luxury pill */}
+      <AnimatePresence>
+        {toastNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -15, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className={`fixed top-20 left-1/2 -translate-x-1/2 z-[9999] shadow-2xl rounded-full px-4 py-2 sm:px-5 sm:py-2.5 flex items-center gap-2 backdrop-blur-md max-w-[92vw] sm:max-w-md border whitespace-nowrap ${
+              toastNotification.type === 'error'
+                ? 'bg-charcoal-900/95 border-red-500/50 text-red-200'
+                : 'bg-charcoal-900/95 border-gold-400/50 text-cream-100'
+            }`}
+            style={{
+              boxShadow: toastNotification.type === 'error' 
+                ? '0 10px 25px -5px rgba(239, 68, 68, 0.3), 0 0 15px rgba(0, 0, 0, 0.8)'
+                : '0 10px 25px -5px rgba(212, 175, 55, 0.25), 0 0 15px rgba(0, 0, 0, 0.8)'
+            }}
+          >
+            {toastNotification.type === 'error' ? (
+              <AlertCircle size={15} className="text-red-400 shrink-0" />
+            ) : (
+              <Calendar size={15} className="text-gold-400 shrink-0" />
+            )}
+            <span className="text-xs sm:text-sm font-medium tracking-wide">
+              {toastNotification.message}
+            </span>
+            <button
+              type="button"
+              onClick={() => setToastNotification(null)}
+              className="p-0.5 text-cream-400 hover:text-cream-100 ml-1 rounded-full cursor-pointer"
+              aria-label="Dismiss"
+            >
+              <X size={13} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {step < 4 && (
+        <section className="container mx-auto px-4 mb-12 text-center max-w-3xl">
+          <motion.p 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+            className="text-gold-400 uppercase text-xs tracking-widest font-medium mb-4"
+          >
+            Secure Your Date
+          </motion.p>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+            className="text-display-md font-serif text-cream-50"
+          >
+            Book Your Event
+          </motion.h1>
+        </section>
+      )}
+
+      <section className={`container mx-auto px-4 sm:px-6 lg:px-8 max-w-5xl ${step === 4 ? 'mt-2 sm:mt-4' : ''}`}>
+        <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           
-          <div className="lg:col-span-8 bg-charcoal-800 border border-white/5 rounded-md p-6 sm:p-10">
+          <div className={`lg:col-span-8 bg-charcoal-800 border border-white/5 rounded-md ${step === 4 ? 'p-5 sm:p-6 lg:p-7' : 'p-6 sm:p-10'}`}>
             
             {step < 4 && (
               <div className="flex justify-between items-center mb-12 border-b border-white/5 pb-6">
@@ -277,31 +407,35 @@ export default function Booking() {
               </div>
             )}
 
-            {error && (
-              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-md text-sm">
-                {error}
-              </div>
-            )}
-
             <form onSubmit={handleSubmit(onSubmit)}>
               {/* Step 1: Date */}
               {step === 1 && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   {!currentUser && (
-                    <div className="mb-6 p-4 bg-charcoal-800 border border-gold-500/20 rounded-md flex items-center justify-between shadow-lg">
-                      <div>
-                        <p className="text-sm font-medium text-cream-100">Already have an account?</p>
-                        <p className="text-xs text-cream-400 mt-1">Sign in to autofill details and track your booking.</p>
+                    <div className="mb-6 p-3.5 sm:p-4 bg-charcoal-850/90 border border-gold-500/25 rounded-2xl flex items-center justify-between gap-3 shadow-lg">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-semibold text-cream-100">Already have an account?</p>
+                        <p className="text-[11px] sm:text-xs text-cream-400 mt-0.5 leading-snug">Sign in to autofill details and track your booking.</p>
                       </div>
-                      <Button type="button" variant="outline" size="sm" onClick={() => signInWithPopup(auth, googleProvider)} className="border-gold-500/50 text-gold-400 hover:bg-gold-500/10 hover:text-gold-300">
-                        Sign In
-                      </Button>
+                      <button 
+                        type="button" 
+                        onClick={() => loginWithGoogle()} 
+                        className="shrink-0 px-4 py-2.5 sm:py-2 text-xs font-black tracking-wider rounded-xl whitespace-nowrap bg-gold-400 text-black hover:bg-gold-300 transition-all flex items-center gap-1.5 shadow-md shadow-gold-400/20 active:scale-95 cursor-pointer font-sans"
+                      >
+                        <LogIn size={14} className="text-black" />
+                        <span className="text-black font-black">Sign In</span>
+                      </button>
                     </div>
                   )}
 
                   <h2 className="text-xl font-serif text-cream-100 mb-6">When is your event?</h2>
                   
-                  <div className="bg-charcoal-900 border border-white/10 rounded-2xl mb-8 flex flex-col items-center justify-center p-3 sm:p-6 shadow-2xl overflow-hidden w-full max-w-md mx-auto">
+                  <motion.div 
+                    ref={calendarRef}
+                    animate={shakeCalendar ? { x: [-8, 8, -6, 6, -3, 3, 0] } : {}}
+                    transition={{ duration: 0.5 }}
+                    className={`bg-charcoal-900 border rounded-2xl mb-8 flex flex-col items-center justify-center p-3 sm:p-6 shadow-2xl overflow-hidden w-full max-w-md mx-auto transition-all duration-300 ${shakeCalendar ? 'border-red-500 ring-2 ring-red-500/50 shadow-red-950/50' : 'border-white/10'}`}
+                  >
                     <style>{`
                       .rdp-root {
                         --rdp-accent-color: #D4AF37;
@@ -333,9 +467,11 @@ export default function Booking() {
                         justify-content: center;
                         align-items: center;
                         padding: 0.25rem 0 1rem 0;
-                        font-family: Georgia, serif;
-                        font-size: 1.2rem;
+                        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+                        font-variant-numeric: lining-nums tabular-nums !important;
+                        font-size: 1.15rem;
                         font-weight: 700;
+                        letter-spacing: -0.01em;
                         color: #FFFFFF !important;
                         position: relative;
                       }
@@ -414,6 +550,8 @@ export default function Booking() {
                         align-items: center !important;
                         justify-content: center !important;
                         margin: 0 auto !important;
+                        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+                        font-variant-numeric: lining-nums tabular-nums !important;
                         transition: all 0.15s ease-in-out !important;
                         cursor: pointer;
                       }
@@ -500,9 +638,9 @@ export default function Booking() {
                     {/* Hidden input to satisfy form validation */}
                     <input type="hidden" {...register('date')} />
                     {errors.date && <p className="text-red-400 text-sm mt-2">{errors.date.message}</p>}
-                  </div>
+                  </motion.div>
 
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6">
                     <a
                       href={`https://wa.me/919489724975?text=${encodeURIComponent(
                         watchDate 
@@ -511,12 +649,34 @@ export default function Booking() {
                       )}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      className="w-full sm:w-auto h-12 px-5 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
-                      <MessageCircle size={14} /> Inquire via WhatsApp
+                      <MessageCircle size={15} /> Inquire via WhatsApp
                     </a>
-                    <Button type="button" onClick={handleNextStep} className="w-full sm:w-auto">Continue to Details</Button>
+                    <Button 
+                      type="button" 
+                      onClick={handleNextStep} 
+                      className={`w-full sm:w-auto h-12 px-7 rounded-xl text-xs sm:text-sm font-black tracking-wider flex items-center justify-center gap-1.5 transition-all ${
+                        !watchDate 
+                          ? 'bg-charcoal-700 hover:bg-charcoal-600 text-cream-300 border border-white/10' 
+                          : 'bg-gold-500 hover:bg-gold-400 text-charcoal-900 shadow-lg shadow-gold-500/20'
+                      }`}
+                    >
+                      <span>Continue</span>
+                      <ChevronRight size={16} />
+                    </Button>
                   </div>
+
+                  {/* Subtle guidance text beneath buttons */}
+                  <p className="text-center text-xs text-cream-400/70 mt-3 flex items-center justify-center gap-1.5">
+                    {watchDate ? (
+                      <span className="text-gold-400 font-medium flex items-center gap-1.5">
+                        <CheckCircle2 size={13} className="text-gold-400" /> Selected: {format(new Date(watchDate), 'EEEE, MMMM do, yyyy')}
+                      </span>
+                    ) : (
+                      <span>Tap an available date to continue</span>
+                    )}
+                  </p>
                 </motion.div>
               )}
 
@@ -528,20 +688,30 @@ export default function Booking() {
                   <div className="space-y-6 mb-8">
                     <div className="grid sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Full Name</label>
-                        <input type="text" {...register('name')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200" />
-                        {errors.name && <p className="text-red-400 text-xs">{errors.name.message}</p>}
+                        <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Full Name <span className="text-red-400">*</span></label>
+                        <input 
+                          type="text" 
+                          {...register('name')} 
+                          placeholder="Your full name"
+                          className={`w-full bg-charcoal-900 border rounded-xl px-4 py-3 text-cream-200 transition-colors ${errors.name ? 'border-red-500 ring-1 ring-red-500/50' : 'border-white/10 focus:border-gold-400/50'}`} 
+                        />
+                        {errors.name && <p className="text-red-400 text-xs flex items-center gap-1 font-medium"><AlertCircle size={12} /> {errors.name.message}</p>}
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Phone Number</label>
-                        <input type="tel" {...register('phone')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200" />
-                        {errors.phone && <p className="text-red-400 text-xs">{errors.phone.message}</p>}
+                        <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Phone Number <span className="text-red-400">*</span></label>
+                        <input 
+                          type="tel" 
+                          {...register('phone')} 
+                          placeholder="10-digit mobile number"
+                          className={`w-full bg-charcoal-900 border rounded-xl px-4 py-3 text-cream-200 transition-colors ${errors.phone ? 'border-red-500 ring-1 ring-red-500/50' : 'border-white/10 focus:border-gold-400/50'}`} 
+                        />
+                        {errors.phone && <p className="text-red-400 text-xs flex items-center gap-1 font-medium"><AlertCircle size={12} /> {errors.phone.message}</p>}
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Email Address (Optional)</label>
-                      <input type="email" {...register('email')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200" />
+                      <input type="email" {...register('email')} placeholder="you@example.com" className="w-full bg-charcoal-900 border border-white/10 rounded-xl px-4 py-3 text-cream-200" />
                       {errors.email && <p className="text-red-400 text-xs">{errors.email.message}</p>}
                     </div>
                     
@@ -549,7 +719,7 @@ export default function Booking() {
                     <div className="grid sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Event Type</label>
-                        <select {...register('eventType')} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 text-sm appearance-none focus:outline-none focus:border-gold-400/50">
+                        <select {...register('eventType')} className="w-full bg-charcoal-900 border border-white/10 rounded-xl px-4 py-3 text-cream-200 text-sm appearance-none focus:outline-none focus:border-gold-400/50">
                           <option value="Birthday Party">Birthday Party</option>
                           <option value="Anniversary">Anniversary</option>
                           <option value="Family Function">Family Function</option>
@@ -565,20 +735,35 @@ export default function Booking() {
 
                       <div className="space-y-2">
                         <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Estimated Guests</label>
-                        <input type="number" {...register('guestCount', { valueAsNumber: true })} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 text-sm focus:outline-none focus:border-gold-400/50" />
+                        <input type="number" {...register('guestCount', { valueAsNumber: true })} className="w-full bg-charcoal-900 border border-white/10 rounded-xl px-4 py-3 text-cream-200 text-sm focus:outline-none focus:border-gold-400/50" />
                         {errors.guestCount && <p className="text-red-400 text-xs">{errors.guestCount.message}</p>}
                       </div>
                     </div>
 
                     <div className="space-y-2">
                       <label className="text-xs uppercase tracking-widest text-cream-400 font-medium">Additional Notes (Optional)</label>
-                      <textarea {...register('notes')} rows={3} className="w-full bg-charcoal-900 border border-white/10 rounded-md px-4 py-3 text-cream-200 resize-none"></textarea>
+                      <textarea {...register('notes')} rows={3} placeholder="Any specific requirements or timings..." className="w-full bg-charcoal-900 border border-white/10 rounded-xl px-4 py-3 text-cream-200 resize-none"></textarea>
                     </div>
                   </div>
 
-                  <div className="flex justify-between">
-                    <Button type="button" variant="outline" onClick={() => setStep(1)}>Back</Button>
-                    <Button type="button" onClick={handleNextStep}>Review Booking</Button>
+                  <div className="flex items-center gap-3 pt-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => { setToastNotification(null); setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      className="h-12 px-5 rounded-xl text-xs sm:text-sm font-bold tracking-wider flex items-center justify-center gap-1.5 shrink-0"
+                    >
+                      <ChevronLeft size={16} />
+                      <span>Back</span>
+                    </Button>
+                    <Button 
+                      type="button" 
+                      onClick={handleNextStep}
+                      className="flex-1 h-12 px-4 rounded-xl text-xs sm:text-sm font-black tracking-wider flex items-center justify-center gap-1.5 whitespace-nowrap"
+                    >
+                      <span>Continue</span>
+                      <ChevronRight size={16} />
+                    </Button>
                   </div>
                 </motion.div>
               )}
@@ -596,9 +781,22 @@ export default function Booking() {
                       ? ' Review your details and submit below.' 
                       : ' Sign in with Google to submit and secure your date.'}
                   </p>
-                  <div className="flex flex-col-reverse sm:flex-row justify-center gap-4">
-                    <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => setStep(2)}>Back</Button>
-                    <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+
+                  <div className="flex flex-col-reverse sm:flex-row justify-center gap-3">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full sm:w-auto h-12 px-6 rounded-xl text-xs sm:text-sm font-bold tracking-wider flex items-center justify-center gap-1.5" 
+                      onClick={() => { setToastNotification(null); setStep(2); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    >
+                      <ChevronLeft size={16} />
+                      <span>Back</span>
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="w-full sm:w-auto h-12 px-8 rounded-xl text-xs sm:text-sm font-black tracking-wider flex items-center justify-center gap-2" 
+                      disabled={isSubmitting}
+                    >
                       {isSubmitting ? 'Submitting...' : currentUser ? 'Submit Booking Request' : 'Continue with Google to Book'}
                     </Button>
                   </div>
@@ -619,55 +817,45 @@ export default function Booking() {
                 </motion.div>
               )}
 
-              {/* Step 4: Success */}
+              {/* Step 4: Success Confirmation */}
               {step === 4 && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-left py-2">
-                  <div className="text-center mb-8">
-                    <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <CheckCircle2 className="text-green-400 w-10 h-10" />
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.96 }} 
+                  animate={{ opacity: 1, scale: 1 }} 
+                  className="flex flex-col text-left py-1"
+                >
+                  {/* 1. Header (Always first) */}
+                  <div className="order-1 text-center mb-5 sm:mb-6">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-3 border border-green-500/25 shadow-lg shadow-green-500/10">
+                      <CheckCircle2 className="text-green-400 w-7 h-7 sm:w-8 sm:h-8" />
                     </div>
-                    <h2 className="text-2xl font-serif text-cream-100 mb-4">Request Received!</h2>
-                    <p className="text-cream-400 max-w-md mx-auto">
-                      Thank you, {watchName}. Your booking request for {watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : ''} has been submitted successfully.
+                    <h2 className="text-xl sm:text-2xl font-serif text-cream-100 mb-1.5">Request Received!</h2>
+                    <p className="text-cream-400 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
+                      Thank you, <span className="text-cream-100 font-semibold">{watchName}</span>. Your booking request for <span className="text-cream-100 font-semibold">{watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : ''}</span> has been submitted successfully.
                     </p>
                   </div>
-                  
-                  <div className="bg-charcoal-900 border border-white/5 rounded-md p-6 mb-8 shadow-inner">
-                    <h3 className="text-lg font-serif text-gold-400 mb-6 border-b border-white/5 pb-2">What happens next?</h3>
-                    <div className="space-y-6">
-                      <div className="flex gap-4">
-                        <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/20 text-blue-400 font-bold text-sm">1</div>
-                        <div>
-                          <p className="text-cream-200 font-medium mb-1">Review & Approval (Within 2 hours)</p>
-                          <p className="text-cream-400 text-sm">Our team will review your request, confirm availability, and set the final pricing based on your guest count and requirements.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0 border border-yellow-500/20 text-yellow-500 font-bold text-sm">2</div>
-                        <div>
-                          <p className="text-cream-200 font-medium mb-1">Pay Advance (Within 24 hours)</p>
-                          <p className="text-cream-400 text-sm">Once approved, you'll receive an email notification. Log in to your dashboard to pay the advance to secure your date.</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0 border border-green-500/20 text-green-400 font-bold text-sm">3</div>
-                        <div>
-                          <p className="text-cream-200 font-medium mb-1">Booking Confirmed</p>
-                          <p className="text-cream-400 text-sm">Your event date is locked in! The remaining balance is due exactly 24 hours prior to your event.</p>
-                        </div>
-                      </div>
-                    </div>
+
+                  {/* 2. Track Booking Button (order-2 on mobile, order-4 on desktop) */}
+                  <div className="order-2 lg:order-4 text-center mb-4 lg:mb-0 lg:pt-1">
+                    <Button 
+                      to="/dashboard" 
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 shadow-xl shadow-gold-500/10 hover:shadow-gold-500/25"
+                    >
+                      <span>Track Booking</span>
+                      <ArrowRight size={16} />
+                    </Button>
                   </div>
 
-                  <div className="mt-8 mb-8 p-6 bg-gold-500/5 border border-gold-500/20 rounded-xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
-                    <div>
-                      <h4 className="text-gold-400 font-serif text-lg font-bold mb-1">Want Instant Review?</h4>
-                      <p className="text-cream-300 text-sm">Call us or ping on WhatsApp to bypass the review wait and lock in your date right away.</p>
+                  {/* 3. Want Instant Review? (order-3 on mobile, order-3 on desktop) */}
+                  <div className="order-3 lg:order-3 mb-4 p-4 sm:p-5 bg-gold-500/5 border border-gold-500/20 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 shadow-lg">
+                    <div className="text-center sm:text-left">
+                      <h4 className="text-gold-400 text-sm font-bold mb-0.5">Want Instant Review?</h4>
+                      <p className="text-cream-300 text-xs">Call or message on WhatsApp to bypass the review wait and lock your date now.</p>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                    <div className="flex items-center gap-2.5 shrink-0 flex-wrap justify-center">
                       <a 
                         href="tel:+919489724975" 
-                        className="inline-flex items-center gap-2 px-5 py-3 bg-gold-400 hover:bg-gold-300 text-black !text-black text-xs font-black uppercase tracking-wider rounded-full shadow-lg shadow-gold-500/10 active:scale-95 transition-all"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-gold-400 hover:bg-gold-300 text-black !text-black text-xs font-black uppercase tracking-wider rounded-full shadow-md active:scale-95 transition-all"
                       >
                         📞 Call
                       </a>
@@ -677,15 +865,41 @@ export default function Booking() {
                         )}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-5 py-3 bg-green-500 hover:bg-green-400 text-black !text-black text-xs font-black uppercase tracking-wider rounded-full shadow-lg shadow-green-500/10 active:scale-95 transition-all"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-500 hover:bg-green-400 text-black !text-black text-xs font-black uppercase tracking-wider rounded-full shadow-md active:scale-95 transition-all"
                       >
                         <MessageCircle size={14} /> WhatsApp
                       </a>
                     </div>
                   </div>
 
-                  <div className="text-center">
-                    <Button to="/dashboard" className="w-full sm:w-auto">Go to Dashboard to Track Status</Button>
+                  {/* 4. What happens next? (order-4 on mobile, order-2 on desktop) */}
+                  <div className="order-4 lg:order-2 bg-charcoal-900/90 border border-white/5 rounded-xl p-4 sm:p-5 mb-4 shadow-inner">
+                    <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-gold-400 mb-3 border-b border-white/5 pb-2">
+                      What happens next?
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="flex items-start gap-3 md:flex-col md:gap-2 p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
+                        <div className="w-6 h-6 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 font-bold text-xs flex items-center justify-center shrink-0">1</div>
+                        <div>
+                          <p className="text-cream-100 font-medium text-xs mb-0.5">Review & Approval</p>
+                          <p className="text-cream-400 text-[11px] leading-relaxed">Our team verifies availability and sets pricing within 2 hours.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3 md:flex-col md:gap-2 p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
+                        <div className="w-6 h-6 rounded-full bg-yellow-500/15 border border-yellow-500/30 text-yellow-400 font-bold text-xs flex items-center justify-center shrink-0">2</div>
+                        <div>
+                          <p className="text-cream-100 font-medium text-xs mb-0.5">Pay Advance</p>
+                          <p className="text-cream-400 text-[11px] leading-relaxed">Once approved, sign in to your dashboard to pay the advance.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3 md:flex-col md:gap-2 p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
+                        <div className="w-6 h-6 rounded-full bg-green-500/15 border border-green-500/30 text-green-400 font-bold text-xs flex items-center justify-center shrink-0">3</div>
+                        <div>
+                          <p className="text-cream-100 font-medium text-xs mb-0.5">Booking Confirmed</p>
+                          <p className="text-cream-400 text-[11px] leading-relaxed">Your date is locked in! Balance is due 24h prior to event.</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -702,7 +916,7 @@ export default function Booking() {
                   <Calendar className="text-gold-400 shrink-0 w-5 h-5 mt-0.5" />
                   <div>
                     <p className="text-cream-200 text-sm font-medium">Date</p>
-                    <p className="text-cream-400 text-sm">{watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : 'Not selected'}</p>
+                    <p className="text-cream-400 text-sm font-sans tabular-nums">{watchDate ? format(new Date(watchDate), 'MMMM do, yyyy') : 'Not selected'}</p>
                   </div>
                 </div>
                 
@@ -710,7 +924,7 @@ export default function Booking() {
                   <Clock className="text-gold-400 shrink-0 w-5 h-5 mt-0.5" />
                   <div>
                     <p className="text-cream-200 text-sm font-medium">Timing</p>
-                    <p className="text-cream-400 text-sm">5:00 PM – 10:00 PM</p>
+                    <p className="text-cream-400 text-sm font-sans tabular-nums">5:00 PM – 10:00 PM</p>
                   </div>
                 </div>
                 
@@ -718,7 +932,7 @@ export default function Booking() {
                   <Users className="text-gold-400 shrink-0 w-5 h-5 mt-0.5" />
                   <div>
                     <p className="text-cream-200 text-sm font-medium">Capacity</p>
-                    <p className="text-cream-400 text-sm">{watchGuestCount || 0} Guests</p>
+                    <p className="text-cream-400 text-sm font-sans tabular-nums">{watchGuestCount || 0} Guests</p>
                   </div>
                 </div>
               </div>
@@ -726,7 +940,7 @@ export default function Booking() {
               <div className="border-t border-white/10 pt-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-cream-400 text-sm">Estimated Base Price</span>
-                  <span className="text-cream-200 font-medium">
+                  <span className="text-cream-200 font-medium font-sans tabular-nums">
                     {estimatedPrice ? `₹${estimatedPrice.toLocaleString()}` : 'Calculating...'}
                   </span>
                 </div>

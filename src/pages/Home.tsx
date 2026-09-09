@@ -10,10 +10,10 @@ import {
   Lightbulb, 
   Users, 
   Utensils, 
-  Sparkles, 
   Heart, 
   Clock,
-  ArrowRight
+  ArrowRight,
+  Cake
 } from 'lucide-react'
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
 import { Button } from '@/components/ui/Button'
@@ -55,7 +55,7 @@ const eventCards = [
   },
   {
     title: 'Birthdays & Milestones',
-    icon: Sparkles,
+    icon: Cake,
     tag: 'Celebrations & Parties'
   },
   {
@@ -158,30 +158,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. VENUE HIGHLIGHT STRIP */}
-      <section className="bg-charcoal-950 border-y border-white/5 py-3.5 px-4 overflow-x-auto">
-        <div className="container mx-auto flex items-center justify-start md:justify-center gap-5 md:gap-8 text-xs sm:text-sm text-cream-300 font-medium whitespace-nowrap min-w-max md:min-w-0">
-          <span className="flex items-center gap-1.5 text-gold-400">
-            <Sparkles size={13} /> Open Lawn
-          </span>
-          <span className="text-white/15">•</span>
-          <span className="flex items-center gap-1.5 text-cream-200">
-            <Users size={13} className="text-gold-400" /> 50 – 300 Guests
-          </span>
-          <span className="text-white/15">•</span>
-          <span className="flex items-center gap-1.5 text-cream-200">
-            <Zap size={13} className="text-gold-400" /> Free Electricity
-          </span>
-          <span className="text-white/15">•</span>
-          <span className="flex items-center gap-1.5 text-cream-200">
-            <CarFront size={13} className="text-gold-400" /> Free Parking
-          </span>
-          <span className="text-white/15">•</span>
-          <span className="flex items-center gap-1.5 text-cream-200">
-            <MapPin size={13} className="text-gold-400" /> Kurusady, Nagercoil
-          </span>
-        </div>
-      </section>
+
 
       {/* 3. ABOUT SECTION (CLEAN & MINIMAL) */}
       <section className="py-16 sm:py-24 container mx-auto px-4 sm:px-6 lg:px-8">
@@ -230,96 +207,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. EVENTS SECTION (CLEAN GRID) */}
-      <section className="py-16 sm:py-20 bg-charcoal-850 border-y border-white/5">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-            <div>
-              <p className="text-gold-400 uppercase text-xs tracking-widest font-semibold mb-1.5">
-                Events & Occasions
-              </p>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-cream-100">
-                Crafted for Every Celebration
-              </h2>
-            </div>
-            <Button 
-              to="/events" 
-              variant="outline"
-              size="sm"
-              className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs font-bold"
-            >
-              <span>All Events</span>
-              <ArrowRight size={13} />
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {eventCards.map((event) => {
-              const Icon = event.icon
-              return (
-                <div 
-                  key={event.title}
-                  className="bg-charcoal-900/90 border border-white/5 hover:border-gold-500/30 p-5 rounded-xl transition-all duration-300 shadow-md group hover:-translate-y-1"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-gold-400 mb-3.5 group-hover:scale-110 transition-transform">
-                    <Icon size={18} />
-                  </div>
-                  <h3 className="text-base font-serif text-cream-100 mb-1 group-hover:text-gold-300 transition-colors">
-                    {event.title}
-                  </h3>
-                  <p className="text-cream-400 text-xs font-medium">
-                    {event.tag}
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. AMENITIES SECTION (COMPACT BADGE GRID) */}
-      <section className="py-16 sm:py-20 container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-          <div>
-            <p className="text-gold-400 uppercase text-xs tracking-widest font-semibold mb-1.5">
-              Facilities
-            </p>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-cream-100">
-              Venue Amenities
-            </h2>
-          </div>
-          <Button 
-            to="/amenities" 
-            variant="outline"
-            size="sm"
-            className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs font-bold"
-          >
-            <span>All Amenities</span>
-            <ArrowRight size={13} />
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-          {amenitiesList.map((item) => {
-            const Icon = item.icon
-            return (
-              <div 
-                key={item.title}
-                className="bg-charcoal-800/80 hover:bg-charcoal-800 border border-white/5 hover:border-gold-500/30 p-4 rounded-xl text-center transition-all duration-300 shadow-sm group hover:-translate-y-1"
-              >
-                <div className="w-9 h-9 rounded-lg bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-gold-400 mx-auto mb-2.5 group-hover:scale-110 transition-transform">
-                  <Icon size={18} />
-                </div>
-                <h3 className="text-xs sm:text-sm font-semibold text-cream-200 group-hover:text-gold-300 transition-colors">
-                  {item.title}
-                </h3>
-              </div>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* 6. CURATED GALLERY PREVIEW */}
+      {/* 4. CURATED GALLERY PREVIEW */}
       <section className="py-16 sm:py-20 bg-charcoal-850 border-y border-white/5">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
@@ -364,6 +252,97 @@ export default function Home() {
         </div>
       </section>
 
+      {/* 5. EVENTS SECTION (2x2 MOBILE / 4-COL DESKTOP) */}
+      <section className="py-16 sm:py-20 container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+          <div>
+            <p className="text-gold-400 uppercase text-xs tracking-widest font-semibold mb-1.5">
+              Events & Occasions
+            </p>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-cream-100">
+              Crafted for Every Celebration
+            </h2>
+          </div>
+          <Button 
+            to="/events" 
+            variant="outline"
+            size="sm"
+            className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs font-bold"
+          >
+            <span>All Events</span>
+            <ArrowRight size={13} />
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          {eventCards.map((event) => {
+            const Icon = event.icon
+            return (
+              <div 
+                key={event.title}
+                className="bg-charcoal-900/90 border border-white/5 hover:border-gold-500/30 p-4 sm:p-5 rounded-xl transition-all duration-300 shadow-md group hover:-translate-y-1 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-gold-400 mb-3 sm:mb-3.5 group-hover:scale-110 transition-transform">
+                    <Icon size={18} className="sm:w-5 sm:h-5" />
+                  </div>
+                  <h3 className="text-sm sm:text-base font-serif font-medium text-cream-100 group-hover:text-gold-300 transition-colors leading-snug">
+                    {event.title}
+                  </h3>
+                </div>
+                <p className="hidden sm:block text-cream-400 text-xs font-medium mt-2">
+                  {event.tag}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* 6. AMENITIES SECTION (COMPACT BADGE GRID) */}
+      <section className="py-16 sm:py-20 bg-charcoal-850 border-y border-white/5">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+            <div>
+              <p className="text-gold-400 uppercase text-xs tracking-widest font-semibold mb-1.5">
+                Facilities
+              </p>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-cream-100">
+                Venue Amenities
+              </h2>
+            </div>
+            <Button 
+              to="/amenities" 
+              variant="outline"
+              size="sm"
+              className="self-start sm:self-auto inline-flex items-center gap-1.5 text-xs font-bold"
+            >
+              <span>All Amenities</span>
+              <ArrowRight size={13} />
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            {amenitiesList.map((item) => {
+              const Icon = item.icon
+              return (
+                <div 
+                  key={item.title}
+                  className="bg-charcoal-800/80 hover:bg-charcoal-800 border border-white/5 hover:border-gold-500/30 p-4 rounded-xl text-center transition-all duration-300 shadow-sm group hover:-translate-y-1"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-gold-400 mx-auto mb-2.5 group-hover:scale-110 transition-transform">
+                    <Icon size={18} />
+                  </div>
+                  <h3 className="text-xs sm:text-sm font-semibold text-cream-200 group-hover:text-gold-300 transition-colors">
+                    {item.title}
+                  </h3>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* 7. PRICING & DATE CHECK */}
       <section className="py-16 sm:py-20 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-2xl mx-auto mb-8 sm:mb-10">
@@ -382,7 +361,7 @@ export default function Home() {
           </div>
           
           <h3 className="text-xl sm:text-2xl font-serif text-cream-100 mb-1">Venue Package Starts From</h3>
-          <p className="text-3xl sm:text-4xl font-serif text-gold-300 font-bold mb-4">
+          <p className="text-3xl sm:text-4xl font-sans text-gold-300 font-bold tabular-nums mb-4">
             {startingPrice ? `₹${startingPrice.toLocaleString('en-IN')}` : '₹15,000'}
           </p>
 

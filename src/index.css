@@ -39,15 +39,42 @@
   }
 }
 
+/* Standard Numbers Font Mapping: forces all numerals to render in clean standard Inter/system font */
+@font-face {
+  font-family: 'StandardNumbers';
+  src: local('Inter'), local('Segoe UI'), local('SF Pro Text'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+  font-weight: 100 900;
+  font-style: normal;
+  unicode-range: U+0030-0039, U+002C, U+002E, U+20B9, U+0024, U+0025, U+002B, U+002D, U+003A, U+002F;
+}
+
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: local('Inter'), local('Segoe UI'), local('SF Pro Text'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+  font-weight: 100 900;
+  font-style: normal;
+  unicode-range: U+0030-0039, U+002C, U+002E, U+20B9, U+0024, U+0025, U+002B, U+002D, U+003A, U+002F;
+}
+
+@font-face {
+  font-family: 'Georgia';
+  src: local('Inter'), local('Segoe UI'), local('SF Pro Text'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+  font-weight: 100 900;
+  font-style: normal;
+  unicode-range: U+0030-0039, U+002C, U+002E, U+20B9, U+0024, U+0025, U+002B, U+002D, U+003A, U+002F;
+}
+
 @layer base {
   * {
     @apply border-white/10;
+    font-variant-numeric: lining-nums tabular-nums;
   }
   body {
     @apply bg-charcoal-900 text-cream-200 font-sans antialiased overflow-x-hidden selection:bg-gold-500/30;
+    font-variant-numeric: lining-nums tabular-nums;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif;
+    font-variant-numeric: lining-nums tabular-nums;
   }
 
   /* Custom Scrollbar Styles */
